@@ -1,3 +1,5 @@
+import logging
+
 from typing import Iterator
 
 from ..models import AppImage, TestResult
@@ -8,6 +10,10 @@ class CheckBase:
         self._appimage = appimage
 
     def run(self) -> Iterator[TestResult]:
+        raise NotImplementedError
+
+    @staticmethod
+    def get_logger() -> logging.Logger:
         raise NotImplementedError
 
     @staticmethod

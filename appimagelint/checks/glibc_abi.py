@@ -1,4 +1,5 @@
 import json
+import logging
 import shlex
 import subprocess
 from typing import Iterator
@@ -18,6 +19,10 @@ class GlibcABICheck(CheckBase):
 
     def __init__(self, appimage: AppImage):
         super().__init__(appimage)
+
+    @staticmethod
+    def get_logger() -> logging.Logger:
+        return make_logger("glibc_abi_check")
 
     @staticmethod
     def name():

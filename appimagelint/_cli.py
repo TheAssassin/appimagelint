@@ -95,7 +95,7 @@ def run():
                     check = check_cls(appimage)
 
                     for testres in check.run():
-                        logger.info(formatter.format(testres))
+                        check.get_logger().info(formatter.format(testres))
 
         except KeyboardInterrupt:
             logger.critical("process interrupted by user")
