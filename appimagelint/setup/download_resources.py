@@ -1,9 +1,10 @@
 import json
+import gzip
 import os
 
 import requests
 
-from ..data import debian_codename_map_path, debian_glibc_versions_data_path
+from ..data import debian_codename_map_path, debian_glibc_versions_data_path, ubuntu_glibc_versions_data_path
 from . import get_logger
 
 
@@ -33,21 +34,62 @@ def _get_debian_package_versions_map(package_name: str):
     return versions_map
 
 
+def _get_ubuntu_package_versions_map(package_name: str):
+    logger = get_logger()
+
+    logger.info("Fetching {} package versions from Ubuntu FTP mirror".format(package_name))
+
+    versions_map = {}
+
+    releases = ("trusty", "xenial", "bionic", "cosmic", "disco")
+    for release in releases:
+        url = "https://ftp.fau.de/ubuntu/dists/{}/main/binary-amd64/Packages.gz".format(release)
+        response = requests.get(url)
+
+        if response.status_code == 404 and releases.index(release) > releases.index("cosmic"):
+            continue
+
+        response.raise_for_status()
+
+        data = gzip.decompress(response.content).decode()
+
+        # TODO: implement as binary search
+        pkg_off = data.find("Package: {}".format(package_name))
+        pkg_ver_off = data.find("Version:", pkg_off)
+        next_pkg_off = data.find("Package: {}".format(package_name), pkg_off+1)
+
+        if pkg_ver_off == -1 or pkg_ver_off > next_pkg_off:
+            raise ValueError()
+
+        version = data[pkg_ver_off:pkg_ver_off+512].splitlines()[0].split("Version: ")[-1]
+        parsed_version = ".".join(version.split(".")[:3]).split("-")[0]
+        versions_map[release] = [parsed_version]
+
+    return versions_map
+
+
 def download_package_version_maps():
     logger = get_logger()
 
-    try:
-        debian_glibc_versions = _get_debian_package_versions_map("glibc")
+    for distro, get_map_callback, out_path in [
+        ("debian", _get_debian_package_versions_map, debian_glibc_versions_data_path()),
+        ("ubuntu", _get_ubuntu_package_versions_map, ubuntu_glibc_versions_data_path()),
+    ]:
+        logger.info("Fetching version data for {}".format(distro))
 
-    except OSError:
-        if os.path.exists(debian_glibc_versions_data_path()):
-            logger.error("Could not connect to server, using existing (old) data file")
+        try:
+            glibc_versions = get_map_callback("glibc")
+
+        except OSError as e:
+            if os.path.exists(out_path):
+                logger.error("Could not connect to server, using existing (old) data file")
+                logger.exception(e)
+            else:
+                raise
+
         else:
-            raise
-
-    else:
-        with open(debian_glibc_versions_data_path(), "w") as f:
-            json.dump(debian_glibc_versions, f, indent=2)
+            with open(out_path, "w") as f:
+                json.dump(glibc_versions, f, indent=2)
 
     # TODO: libstdc++
 
