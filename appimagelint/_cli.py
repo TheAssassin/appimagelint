@@ -5,6 +5,7 @@ import shlex
 import sys
 import tempfile
 
+from appimagelint.services.result_formatter import ResultFormatter
 from .models import AppImage
 from . import _logging
 from .checks import *  # noqa
@@ -83,10 +84,18 @@ def run():
 
                 appimage = AppImage(path, custom_runtime=custom_runtime)
 
+                kwargs = dict()
+                if args.force_colors:
+                    kwargs["use_colors"] = True
+
+                formatter = ResultFormatter(**kwargs)
+
                 for check_cls in [GlibcABICheck]:
                     logger.info("Running check \"{}\"".format(check_cls.name()))
                     check = check_cls(appimage)
-                    check.run()
+
+                    for testres in check.run():
+                        logger.info(formatter.format(testres))
 
         except KeyboardInterrupt:
             logger.critical("process interrupted by user")

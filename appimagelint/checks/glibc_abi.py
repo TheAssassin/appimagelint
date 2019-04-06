@@ -1,10 +1,12 @@
 import shlex
 import subprocess
+from typing import Iterator
+
 import packaging.version
 import requests
 
 from ..services import BinaryWalker
-from ..models import AppImage
+from ..models import AppImage, TestResult
 from .._logging import make_logger
 from ..colors import Colors
 from ..symbols import Symbols
@@ -44,7 +46,7 @@ class GlibcABICheck(CheckBase):
     def _detect_glibc_versions(cls, path):
         return cls._detect_gnu_lib_versions("GLIBC_", path)
 
-    def run(self):
+    def run(self) -> Iterator[TestResult]:
         glibc_versions = set()
 
         self._logger.info("detecting runtime's glibc version requirements")
@@ -62,7 +64,9 @@ class GlibcABICheck(CheckBase):
                 glibc_versions.update(glibc_versions)
 
             required_glibc_version = max(glibc_versions)
-            self._check_debian_stable_compat(required_glibc_version)
+
+            for result in self._check_debian_stable_compat(required_glibc_version):
+                yield result
 
     @classmethod
     def _get_debian_codename_map(cls):
@@ -132,7 +136,7 @@ class GlibcABICheck(CheckBase):
         return versions_map
 
     @classmethod
-    def _check_debian_stable_compat(cls, required_glibc: packaging.version.Version):
+    def _check_debian_stable_compat(cls, required_glibc: packaging.version.Version) -> Iterator[TestResult]:
         cache_key = "version_aliases"
 
         if "cache_key" in cls._cache:
@@ -147,17 +151,4 @@ class GlibcABICheck(CheckBase):
 
             should_run = required_glibc < packaging.version.parse(max_supported_glibc)
 
-            msg = "["
-
-            if should_run:
-                msg += Colors.GREEN
-                msg += Symbols.CHECK
-            else:
-                msg += Colors.RED
-                msg += Symbols.CROSS
-
-            msg += Colors.ENDC
-
-            msg += "] AppImage can run on Debian {} ({})".format(suite, codename)
-
-            cls._logger.info(msg)
+            yield TestResult(should_run, "AppImage can run on Debian {} ({})".format(suite, codename))
