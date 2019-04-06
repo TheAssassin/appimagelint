@@ -84,6 +84,6 @@ class GlibcABICheck(CheckBase):
             codename = codename_map[suite]
             max_supported_glibc = glibc_versions_map[codename]
 
-            should_run = required_glibc < packaging.version.parse(max_supported_glibc)
+            should_run = required_glibc <= packaging.version.parse(max_supported_glibc)
 
             yield TestResult(should_run, "AppImage can run on Debian {} ({})".format(suite, codename))
