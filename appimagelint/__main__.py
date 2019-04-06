@@ -1,4 +1,4 @@
-from ._cli import run
+from .cli import run
 
 
 run()
