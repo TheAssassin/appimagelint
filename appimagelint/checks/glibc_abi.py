@@ -1,23 +1,20 @@
+import json
 import shlex
 import subprocess
 from typing import Iterator
 
 import packaging.version
-import requests
 
 from ..services import BinaryWalker
 from ..models import AppImage, TestResult
 from .._logging import make_logger
-from ..colors import Colors
-from ..symbols import Symbols
+from ..data import debian_glibc_versions_data_path, debian_codename_map_path
 
 from . import CheckBase
 
 
 class GlibcABICheck(CheckBase):
     _logger = make_logger("glibc_abi_check")
-
-    _cache = {}
 
     def __init__(self, appimage: AppImage):
         super().__init__(appimage)
@@ -70,78 +67,16 @@ class GlibcABICheck(CheckBase):
 
     @classmethod
     def _get_debian_codename_map(cls):
-        cache_key = "version_aliases"
-
-        if cache_key in cls._cache:
-            return cls._cache[cache_key]
-
-        cls._logger.info("Fetching release information from Debian FTP mirror")
-
-        rv = {}
-
-        for suite in ["oldstable", "stable", "testing", "unstable"]:
-            headers = {"Range": "bytes=0-512"}
-            url = "https://ftp.fau.de/debian/dists/{}/Release".format(suite)
-            response = requests.get(url, headers=headers)
-            response.raise_for_status()
-
-            for line in response.text.splitlines():
-                prefix = "Codename:"
-
-                if line.startswith(prefix):
-                    rv[suite] = line.split(prefix)[-1].strip()
-                    break
-            else:
-                raise ValueError("could not find Release file for suite {} on Debian mirror".format(suite))
-
-        cls._cache[cache_key] = rv
-
-        return rv
-
-    @classmethod
-    def _get_debian_package_versions_map(cls, package_name: str):
-        cls._logger.info("Fetching {} package versions from Debian sources API".format(package_name))
-
-        response = requests.get("https://sources.debian.org/api/src/{}/".format(package_name))
-        response.raise_for_status()
-
-        json = response.json()
-
-        if "error" in json:
-            raise ValueError("invalid response from Debian sources API: {}".format(json["error"]))
-
-        versions_map = {}
-
-        for version in json["versions"]:
-            parsed_version = ".".join(version["version"].split(".")[:2]).split("-")[0]
-
-            for suite in version["suites"]:
-                # simple search for maximum supported version
-                if suite not in versions_map or parsed_version > versions_map[suite]:
-                    versions_map[suite] = parsed_version
-
-        return versions_map
+        with open(debian_codename_map_path(), "r") as f:
+            return json.load(f)
 
     @classmethod
     def _get_glibc_debian_versions_map(cls):
-        cache_key = "glibc_versions_map"
-
-        if cache_key in cls._cache:
-            return cls._cache[cache_key]
-
-        versions_map = cls._get_debian_package_versions_map("glibc")
-
-        cls._cache[cache_key] = versions_map
-
-        return versions_map
+        with open(debian_glibc_versions_data_path(), "r") as f:
+            return json.load(f)
 
     @classmethod
     def _check_debian_stable_compat(cls, required_glibc: packaging.version.Version) -> Iterator[TestResult]:
-        cache_key = "version_aliases"
-
-        if "cache_key" in cls._cache:
-            return cls._cache[cache_key]
-
         codename_map = cls._get_debian_codename_map()
         glibc_versions_map = cls._get_glibc_debian_versions_map()
 
