@@ -110,6 +110,7 @@ class GlibcABICheck(CheckBase):
 
             should_run = required_glibc <= packaging.version.parse(max_supported_glibc)
 
+            cls.get_logger().debug("Debian {} max supported glibc version: {}".format(suite, max_supported_glibc))
             yield TestResult(should_run, "AppImage can run on Debian {} ({})".format(suite, codename))
 
     @classmethod
@@ -117,5 +118,9 @@ class GlibcABICheck(CheckBase):
         glibc_versions_map = cls._get_glibc_ubuntu_versions_map()
 
         for release, glibc_versions in glibc_versions_map.items():
-            should_run = required_glibc <= max([packaging.version.Version(v) for v in glibc_versions])
+            max_supported_glibc = max(glibc_versions)
+
+            should_run = required_glibc <= packaging.version.Version(max_supported_glibc)
+
+            cls.get_logger().debug("Ubuntu {} max supported glibc version: {}".format(release, max_supported_glibc))
             yield TestResult(should_run, "AppImage can run on Ubuntu {}".format(release))
