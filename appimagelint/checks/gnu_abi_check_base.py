@@ -32,10 +32,8 @@ class GnuAbiCheckBase(CheckBase):
         logger = self.get_logger()
 
         versions.update(self._detect_versions_in_file(self._appimage.path()))
-        logger.info("detected required version for runtime: {}".format(max(versions)))
 
-        if not versions:
-            raise ValueError("Could not detect runtime's required version")
+        logger.info("detected required version for runtime: {}".format(max(versions) if versions else "<none>"))
 
         with self._appimage.mount() as mountpoint:
             payload_versions = set()
@@ -50,10 +48,13 @@ class GnuAbiCheckBase(CheckBase):
 
             versions.update(payload_versions)
 
-            if not payload_versions:
-                logger.warning("AppImage payload does not seem to depend on, this is quite unusual")
-            else:
-                logger.info("detected required version for payload: {}".format(max(payload_versions)))
+            if payload_versions:
+                logger.info("detected required version for payload: "
+                            "{}".format(max(payload_versions) if versions else "<none>"))
+
+        if not versions:
+            logger.warning("could not find any dependencies, skipping check")
+            return
 
         required_version = packaging.version.Version(max(versions))
         logger.debug("overall required version: {}".format(required_version))

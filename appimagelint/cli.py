@@ -8,7 +8,7 @@ from .services.result_formatter import ResultFormatter
 from .models import AppImage
 from ._util import make_tempdir
 from . import _logging
-from .checks import *  # noqa
+from .checks import GlibcABICheck, GlibcxxABICheck
 
 
 def parse_args():
@@ -91,7 +91,7 @@ def run():
 
                 formatter = ResultFormatter(**kwargs)
 
-                for check_cls in [GlibcABICheck]:
+                for check_cls in [GlibcABICheck, GlibcxxABICheck]:
                     logger.info("Running check \"{}\"".format(check_cls.name()))
                     check = check_cls(appimage)
 
