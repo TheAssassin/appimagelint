@@ -5,7 +5,7 @@ import shlex
 import sys
 import tempfile
 
-from appimagelint.services.result_formatter import ResultFormatter
+from .services.result_formatter import ResultFormatter
 from .models import AppImage
 from . import _logging
 from .checks import *  # noqa
@@ -47,6 +47,26 @@ def parse_args():
     return args
 
 
+def update_cached_data():
+    from .setup import download_package_version_maps, download_distro_codename_maps
+
+    logger = _logging.make_logger("setup")
+
+    # in case there's a problem with the download and there's no existing data file, we log error and then abort the
+    # installation
+    try:
+        download_package_version_maps()
+    except Exception:
+        logger.error("Error: Failed to download package version maps, aborting")
+        raise
+
+    try:
+        download_distro_codename_maps()
+    except Exception:
+        logger.error("Error: Failed to download distro codename maps, aborting")
+        raise
+
+
 def run():
     args = parse_args()
 
@@ -60,6 +80,8 @@ def run():
 
     # get logger for CLI
     logger = _logging.make_logger("cli")
+
+    update_cached_data()
 
     # need up to date runtime to be able to read the mountpoint from stdout
     # also, it's safer not to rely on the embedded runtime

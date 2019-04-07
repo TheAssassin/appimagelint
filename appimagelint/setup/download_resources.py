@@ -1,15 +1,23 @@
 import json
 import gzip
 import os
-
 import requests
+import time
 
-from ..data import debian_codename_map_path, debian_glibc_versions_data_path, ubuntu_glibc_versions_data_path
-from . import get_logger
+from .paths import debian_codename_map_path, debian_glibc_versions_data_path, ubuntu_glibc_versions_data_path
+from .._logging import make_logger
+
+
+# update caches every week
+_CACHE_TIMEOUT = 7 * 24 * 60 * 60
+
+
+def _get_logger():
+    return make_logger("setup")
 
 
 def _get_debian_package_versions_map(package_name: str):
-    logger = get_logger()
+    logger = _get_logger()
 
     logger.info("Fetching {} package versions from Debian sources API".format(package_name))
 
@@ -35,7 +43,7 @@ def _get_debian_package_versions_map(package_name: str):
 
 
 def _get_ubuntu_package_versions_map(package_name: str):
-    logger = get_logger()
+    logger = _get_logger()
 
     logger.info("Fetching {} package versions from Ubuntu FTP mirror".format(package_name))
 
@@ -69,12 +77,17 @@ def _get_ubuntu_package_versions_map(package_name: str):
 
 
 def download_package_version_maps():
-    logger = get_logger()
+    logger = _get_logger()
 
     for distro, get_map_callback, out_path in [
         ("debian", _get_debian_package_versions_map, debian_glibc_versions_data_path()),
         ("ubuntu", _get_ubuntu_package_versions_map, ubuntu_glibc_versions_data_path()),
     ]:
+        if os.path.exists(out_path):
+            if (os.path.getmtime(out_path) + _CACHE_TIMEOUT) > time.time():
+                logger.debug("{} version map still up to date, no update required".format(distro))
+                continue
+
         logger.info("Fetching version data for {}".format(distro))
 
         try:
@@ -116,7 +129,14 @@ def _get_debian_distro_codename_map():
 
 
 def download_distro_codename_maps():
-    logger = get_logger()
+    logger = _get_logger()
+
+    out_path = debian_codename_map_path()
+
+    if os.path.exists(out_path):
+        if os.path.getmtime(out_path) + _CACHE_TIMEOUT > time.time():
+            logger.debug("debian distro codename map still up to date, no update required")
+            return
 
     logger.info("Fetching release information from Debian FTP mirror")
 
@@ -130,7 +150,7 @@ def download_distro_codename_maps():
             raise
 
     else:
-        with open(debian_codename_map_path(), "w") as f:
+        with open(out_path, "w") as f:
             json.dump(debian_codename_map, f, indent=2)
 
 

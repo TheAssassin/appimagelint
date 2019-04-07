@@ -3,5 +3,7 @@
 __pycache__/
 *.py[c|o]
 *build*/
+*dist/
 *.egg-info/
 *.AppImage
+*.spec

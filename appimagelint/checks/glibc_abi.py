@@ -9,7 +9,7 @@ import packaging.version
 from ..services import BinaryWalker
 from ..models import AppImage, TestResult
 from .._logging import make_logger
-from ..data import debian_glibc_versions_data_path, debian_codename_map_path, ubuntu_glibc_versions_data_path
+from ..setup.paths import debian_glibc_versions_data_path, debian_codename_map_path, ubuntu_glibc_versions_data_path
 
 from . import CheckBase
 
