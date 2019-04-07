@@ -4,6 +4,7 @@ import os
 import subprocess
 import sys
 
+from appimagelint.cache.runtime_cache import AppImageRuntimeCache
 from .services.result_formatter import ResultFormatter
 from .models import AppImage
 from ._util import make_tempdir
@@ -63,41 +64,27 @@ def run():
 
     # need up to date runtime to be able to read the mountpoint from stdout (was fixed only recently)
     # also, it's safer not to rely on the embedded runtime
-    with make_tempdir() as tempdir:
-        logger.info("Downloading up-to-date runtime from GitHub")
+    custom_runtime = AppImageRuntimeCache.get_data()
 
-        custom_runtime = os.path.join(tempdir, "runtime")
+    try:
+        for path in args.path:
+            logger.info("Checking AppImage {}".format(path))
 
-        subprocess.check_call([
-            "wget", "-q", "https://github.com/AppImage/AppImageKit/releases/download/continuous/runtime-x86_64",
-            "-O", custom_runtime
-        ])
+            appimage = AppImage(path, custom_runtime=custom_runtime)
 
-        # no need to bother AppImageLauncher etc.
-        os.chmod(custom_runtime, 0o755)
-        with open(custom_runtime, "rb+") as f:
-            f.seek(8)
-            f.write(b"\x00\x00\x00")
+            kwargs = dict()
+            if args.force_colors:
+                kwargs["use_colors"] = True
 
-        try:
-            for path in args.path:
-                logger.info("Checking AppImage {}".format(path))
+            formatter = ResultFormatter(**kwargs)
 
-                appimage = AppImage(path, custom_runtime=custom_runtime)
+            for check_cls in [GlibcABICheck, GlibcxxABICheck]:
+                logger.info("Running check \"{}\"".format(check_cls.name()))
+                check = check_cls(appimage)
 
-                kwargs = dict()
-                if args.force_colors:
-                    kwargs["use_colors"] = True
+                for testres in check.run():
+                    check.get_logger().info(formatter.format(testres))
 
-                formatter = ResultFormatter(**kwargs)
-
-                for check_cls in [GlibcABICheck, GlibcxxABICheck]:
-                    logger.info("Running check \"{}\"".format(check_cls.name()))
-                    check = check_cls(appimage)
-
-                    for testres in check.run():
-                        check.get_logger().info(formatter.format(testres))
-
-        except KeyboardInterrupt:
-            logger.critical("process interrupted by user")
-            sys.exit(2)
+    except KeyboardInterrupt:
+        logger.critical("process interrupted by user")
+        sys.exit(2)
