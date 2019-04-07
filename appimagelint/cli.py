@@ -1,7 +1,7 @@
 import argparse
 import logging
 import os
-import shlex
+import subprocess
 import sys
 import tempfile
 
@@ -90,10 +90,10 @@ def run():
 
         custom_runtime = os.path.join(tempdir, "runtime")
 
-        os.system(
-            "wget -q https://github.com/AppImage/AppImageKit/releases/download/continuous/runtime-x86_64"
-            " -O {}".format(shlex.quote(custom_runtime))
-        )
+        subprocess.check_call([
+            "wget", "-q", "https://github.com/AppImage/AppImageKit/releases/download/continuous/runtime-x86_64",
+            "-O", custom_runtime
+        ])
 
         os.chmod(custom_runtime, 0o755)
         with open(custom_runtime, "rb+") as f:
