@@ -4,7 +4,7 @@ import os
 import requests
 import subprocess
 
-from . import DistroCodenameMapsCache
+from . import DebianCodenameMapCache
 from ..services import GnuLibVersionSymbolsFinder
 from .._logging import make_logger
 from .._util import make_tempdir, max_version
@@ -107,7 +107,7 @@ def get_glibcxx_version_from_debian_package(url: str):
 def get_debian_glibcxx_versions_map():
     rv = {}
 
-    debian_codenames = DistroCodenameMapsCache.get_data()
+    debian_codenames = DebianCodenameMapCache.get_data()
 
     releases = [debian_codenames[i] for i in get_debian_releases()]
 

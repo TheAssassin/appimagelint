@@ -2,11 +2,11 @@ import os
 
 import requests
 
-from . import DefaultCacheImplBase
+from . import JSONCacheImplBase
 from .paths import debian_codename_map_path
 
 
-class DistroCodenameMapsCache(DefaultCacheImplBase):
+class DebianCodenameMapCache(JSONCacheImplBase):
     @classmethod
     def _cache_file_path(cls):
         return debian_codename_map_path()

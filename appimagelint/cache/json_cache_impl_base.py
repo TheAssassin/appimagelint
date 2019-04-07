@@ -4,7 +4,7 @@ from typing import Iterable, Mapping, Union
 from . import load_json, OutOfDateError, _get_logger, store_json, CacheBase
 
 
-class DefaultCacheImplBase(CacheBase):
+class JSONCacheImplBase(CacheBase):
     """
     Template method kind of class that requires very little configuration by actual instances and implements most
     functionality already, based on primitives.

@@ -8,8 +8,8 @@ def _get_logger():
 from .exceptions import OutOfDateError
 from .io import load_json, store_json
 from .cache_base import CacheBase
-from .default_cache_impl_base import DefaultCacheImplBase
-from .distro_codenames import DistroCodenameMapsCache
+from .json_cache_impl_base import JSONCacheImplBase
+from .distro_codenames import DebianCodenameMapCache
 from .package_version_maps import PackageVersionMapsCache
 
 

@@ -1,6 +1,6 @@
 from typing import Callable, Union, Mapping, Iterable
 
-from . import CacheBase, DefaultCacheImplBase
+from . import CacheBase, JSONCacheImplBase
 from .common import get_debian_package_versions_map, get_debian_glibcxx_versions_map, get_ubuntu_glibcxx_versions_map, \
     get_ubuntu_package_versions_map
 from .paths import ubuntu_glibcxx_versions_data_path, debian_glibcxx_versions_data_path, \
@@ -8,7 +8,7 @@ from .paths import ubuntu_glibcxx_versions_data_path, debian_glibcxx_versions_da
 
 
 def _make_cache_class(distro: str, get_map_callback: Callable, file_path: str):
-    class _PackageVersionMap(DefaultCacheImplBase):
+    class _PackageVersionMap(JSONCacheImplBase):
         @classmethod
         def _cache_file_path(cls):
             return file_path

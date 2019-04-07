@@ -2,7 +2,7 @@ import logging
 import packaging.version
 from typing import Iterator
 
-from ..cache import DistroCodenameMapsCache
+from ..cache import DebianCodenameMapCache
 from ..cache.common import get_debian_releases, get_ubuntu_releases
 from ..models import TestResult
 from ..services import BinaryWalker
@@ -69,7 +69,7 @@ class GnuAbiCheckBase(CheckBase):
 
     @classmethod
     def _get_debian_codename_map(cls):
-        return DistroCodenameMapsCache.get_data()
+        return DebianCodenameMapCache.get_data()
 
     @classmethod
     def _get_debian_versions_map(cls):
