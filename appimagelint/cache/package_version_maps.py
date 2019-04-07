@@ -21,8 +21,6 @@ def _make_cache_class(distro: str, get_map_callback: Callable, file_path: str):
     return _PackageVersionMap
 
 
-
-
 DebianGlibcVersionsCache = _make_cache_class(
     "debian", lambda: get_debian_package_versions_map("glibc"), debian_glibc_versions_data_path()
 )
