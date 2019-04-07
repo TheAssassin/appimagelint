@@ -3,7 +3,6 @@ import os
 import requests
 
 from . import DefaultCacheImplBase
-from .common import get_debian_releases
 from .paths import debian_codename_map_path
 
 
@@ -14,6 +13,9 @@ class DistroCodenameMapsCache(DefaultCacheImplBase):
 
     @classmethod
     def _fetch_data(cls):
+        # avoids circular import issues
+        from .common import get_debian_releases
+
         rv = {}
 
         for suite in get_debian_releases():
