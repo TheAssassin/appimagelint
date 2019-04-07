@@ -144,7 +144,7 @@ def get_ubuntu_glibcxx_versions_map():
 
     for release in get_ubuntu_releases():
         url = get_glibcxx_package_url("ubuntu", release)
-        rv[release] = list(sorted(get_glibcxx_version_from_debian_package(url),
-                                  key=lambda x: [int(i) for i in x.split(".")]))
+        versions = get_glibcxx_version_from_debian_package(url)
+        rv[release] = max(versions, key=lambda x: [int(i) for i in x.split(".")])
 
     return rv
