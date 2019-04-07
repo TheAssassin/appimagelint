@@ -1,0 +1,2 @@
+class OutOfDateError(Exception):
+    pass

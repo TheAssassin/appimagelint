@@ -18,3 +18,11 @@ def ubuntu_glibc_versions_data_path():
 
 def debian_codename_map_path():
     return os.path.join(data_cache_path(), "debian_codenames.json")
+
+
+def debian_glibcxx_versions_data_path():
+    return os.path.join(data_cache_path(), "debian_glibcxx_versions.json")
+
+
+def ubuntu_glibcxx_versions_data_path():
+    return os.path.join(data_cache_path(), "ubuntu_glibcxx_versions.json")

@@ -1,22 +1,19 @@
-import json
 import gzip
 import os
+
 import requests
-import time
+import subprocess
+import tempfile
 
-from .paths import debian_codename_map_path, debian_glibc_versions_data_path, ubuntu_glibc_versions_data_path
+from ..services import GnuLibVersionSymbolsFinder
 from .._logging import make_logger
-
-
-# update caches every week
-_CACHE_TIMEOUT = 7 * 24 * 60 * 60
 
 
 def _get_logger():
     return make_logger("setup")
 
 
-def _get_debian_package_versions_map(package_name: str):
+def get_debian_package_versions_map(package_name: str):
     logger = _get_logger()
 
     logger.info("Fetching {} package versions from Debian sources API".format(package_name))
@@ -42,29 +39,42 @@ def _get_debian_package_versions_map(package_name: str):
     return versions_map
 
 
-def _get_ubuntu_package_versions_map(package_name: str):
+def get_ubuntu_releases():
+    releases = ("trusty", "xenial", "bionic", "cosmic", "disco")
+    return releases
+
+
+def get_debian_releases():
+    releases = ("oldstable", "stable", "testing", "unstable",)
+    return releases
+
+
+def get_packages_gz_from_ftp_mirror(distro, release):
+    url = "https://ftp.fau.de/{}/dists/{}/main/binary-amd64/Packages.gz".format(distro, release)
+    response = requests.get(url)
+
+    response.raise_for_status()
+
+    data = gzip.decompress(response.content).decode()
+
+    return data
+
+
+def get_ubuntu_package_versions_map(package_name: str):
     logger = _get_logger()
 
     logger.info("Fetching {} package versions from Ubuntu FTP mirror".format(package_name))
 
     versions_map = {}
 
-    releases = ("trusty", "xenial", "bionic", "cosmic", "disco")
+    releases = get_ubuntu_releases()
     for release in releases:
-        url = "https://ftp.fau.de/ubuntu/dists/{}/main/binary-amd64/Packages.gz".format(release)
-        response = requests.get(url)
-
-        if response.status_code == 404 and releases.index(release) > releases.index("cosmic"):
-            continue
-
-        response.raise_for_status()
-
-        data = gzip.decompress(response.content).decode()
+        data = get_packages_gz_from_ftp_mirror("ubuntu", release)
 
         # TODO: implement as binary search
         pkg_off = data.find("Package: {}".format(package_name))
         pkg_ver_off = data.find("Version:", pkg_off)
-        next_pkg_off = data.find("Package: {}".format(package_name), pkg_off+1)
+        next_pkg_off = data.find("Package:".format(package_name), pkg_off+1)
 
         if pkg_ver_off == -1 or pkg_ver_off > next_pkg_off:
             raise ValueError()
@@ -76,41 +86,69 @@ def _get_ubuntu_package_versions_map(package_name: str):
     return versions_map
 
 
-def download_package_version_maps():
+def get_glibcxx_version_from_debian_package(url: str):
     logger = _get_logger()
 
-    for distro, get_map_callback, out_path in [
-        ("debian", lambda: _get_debian_package_versions_map("glibc"), debian_glibc_versions_data_path()),
-        ("ubuntu", lambda: _get_ubuntu_package_versions_map("glibc"), ubuntu_glibc_versions_data_path()),
-    ]:
-        if os.path.exists(out_path):
-            if (os.path.getmtime(out_path) + _CACHE_TIMEOUT) > time.time():
-                logger.debug("{} version map still up to date, no update required".format(distro))
-                continue
+    with tempfile.TemporaryDirectory() as d:
+        deb_path = os.path.join(d, "package.deb")
 
-        logger.info("Fetching version data for {}".format(distro))
+        logger.debug("Downloading {} to {}".format(url, deb_path))
 
-        try:
-            glibc_versions = get_map_callback()
+        out_path = os.path.join(d, "out/")
 
-        except OSError as e:
-            if os.path.exists(out_path):
-                logger.error("Could not connect to server, using existing (old) data file")
-                logger.exception(e)
-            else:
-                raise
+        subprocess.check_call(["wget", "-q", url, "-O", deb_path], stdout=subprocess.DEVNULL)
+        subprocess.check_call(["dpkg", "-x", deb_path, out_path], stdout=subprocess.DEVNULL)
 
-        else:
-            with open(out_path, "w") as f:
-                json.dump(glibc_versions, f, indent=2)
-
-    # TODO: libstdc++
+        finder = GnuLibVersionSymbolsFinder(out_path)
+        return finder.check_all_executables("GLIBCXX_")
 
 
-def _get_debian_distro_codename_map():
+def get_debian_glibcxx_versions_map():
     rv = {}
 
-    for suite in ["oldstable", "stable", "testing", "unstable"]:
+    for release in get_debian_releases():
+        url = get_glibcxx_package_url("debian", release)
+        rv[release] = list(sorted(get_glibcxx_version_from_debian_package(url),
+                                  key=lambda x: [int(i) for i in x.split(".")]))
+
+    return rv
+
+
+def get_glibcxx_package_url(distro: str, release: str):
+    data = get_packages_gz_from_ftp_mirror(distro, release)
+
+    bin_pkg_name = "libstdc++6"
+
+    pkg_off = data.find("Package: {}".format(bin_pkg_name))
+    pkg_path_off = data.find("Filename:", pkg_off)
+    next_pkg_off = data.find("Package:", pkg_off + 1)
+
+    if pkg_path_off > next_pkg_off:
+        raise ValueError("could not find Filename: entry for package {}".format(bin_pkg_name))
+
+    pkg_path = data[pkg_path_off:pkg_path_off+2048].splitlines()[0].split("Filename:")[1].strip()
+
+    url_template = "https://ftp.fau.de/{}/{}"\
+
+    url = url_template.format(distro, pkg_path)
+    return url
+
+
+def get_ubuntu_glibcxx_versions_map():
+    rv = {}
+
+    for release in get_ubuntu_releases():
+        url = get_glibcxx_package_url("ubuntu", release)
+        rv[release] = list(sorted(get_glibcxx_version_from_debian_package(url),
+                                  key=lambda x: [int(i) for i in x.split(".")]))
+
+    return rv
+
+
+def get_debian_distro_codename_map():
+    rv = {}
+
+    for suite in get_debian_releases():
         headers = {"Range": "bytes=0-512"}
         url = "https://ftp.fau.de/debian/dists/{}/Release".format(suite)
         response = requests.get(url, headers=headers)
@@ -126,29 +164,3 @@ def _get_debian_distro_codename_map():
             raise ValueError("could not find Release file for suite {} on Debian mirror".format(suite))
 
     return rv
-
-
-def download_distro_codename_maps():
-    logger = _get_logger()
-
-    out_path = debian_codename_map_path()
-
-    if os.path.exists(out_path):
-        if os.path.getmtime(out_path) + _CACHE_TIMEOUT > time.time():
-            logger.debug("debian distro codename map still up to date, no update required")
-            return
-
-    logger.info("Fetching release information from Debian FTP mirror")
-
-    try:
-        debian_codename_map = _get_debian_distro_codename_map()
-
-    except OSError:
-        if os.path.exists(debian_glibc_versions_data_path()):
-            logger.error("Could not connect to server, using existing (old) data file")
-        else:
-            raise
-
-    else:
-        with open(out_path, "w") as f:
-            json.dump(debian_codename_map, f, indent=2)

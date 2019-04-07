@@ -6,6 +6,7 @@ from typing import Iterator
 
 import packaging.version
 
+from appimagelint.cache import load_json
 from appimagelint.services.gnu_lib_versions_symbol_finder import GnuLibVersionSymbolsFinder
 from ..services import BinaryWalker
 from ..models import AppImage, TestResult
@@ -71,18 +72,15 @@ class GlibcABICheck(CheckBase):
 
     @classmethod
     def _get_debian_codename_map(cls):
-        with open(debian_codename_map_path(), "r") as f:
-            return json.load(f)
+        return load_json(debian_codename_map_path())
 
     @classmethod
     def _get_glibc_debian_versions_map(cls):
-        with open(debian_glibc_versions_data_path(), "r") as f:
-            return json.load(f)
+        return load_json(debian_glibc_versions_data_path())
 
     @classmethod
     def _get_glibc_ubuntu_versions_map(cls):
-        with open(ubuntu_glibc_versions_data_path(), "r") as f:
-            return json.load(f)
+        return load_json(ubuntu_glibc_versions_data_path())
 
     @classmethod
     def _check_debian_compat(cls, required_glibc: packaging.version.Version) -> Iterator[TestResult]:
