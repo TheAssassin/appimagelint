@@ -3,10 +3,10 @@ import logging
 import os
 import subprocess
 import sys
-import tempfile
 
 from .services.result_formatter import ResultFormatter
 from .models import AppImage
+from ._util import make_tempdir
 from . import _logging
 from .checks import *  # noqa
 
@@ -47,27 +47,6 @@ def parse_args():
     return args
 
 
-def update_cached_data():
-    from .cache import DistroCodenameMapsCache, PackageVersionMapsCache
-
-    logger = _logging.make_logger("setup")
-
-    # in case there's a problem with the download and there's no existing data file, we log error and then abort the
-    # installation
-    try:
-        # update if necessary
-        DistroCodenameMapsCache.get_data()
-    except Exception:
-        logger.error("Error: Failed to download package version maps, aborting")
-        raise
-
-    try:
-        PackageVersionMapsCache.update_if_necessary()
-    except Exception:
-        logger.error("Error: Failed to download distro codename maps, aborting")
-        raise
-
-
 def run():
     args = parse_args()
 
@@ -82,11 +61,9 @@ def run():
     # get logger for CLI
     logger = _logging.make_logger("cli")
 
-    update_cached_data()
-
-    # need up to date runtime to be able to read the mountpoint from stdout
+    # need up to date runtime to be able to read the mountpoint from stdout (was fixed only recently)
     # also, it's safer not to rely on the embedded runtime
-    with tempfile.TemporaryDirectory() as tempdir:
+    with make_tempdir() as tempdir:
         logger.info("Downloading up-to-date runtime from GitHub")
 
         custom_runtime = os.path.join(tempdir, "runtime")

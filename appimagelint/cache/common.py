@@ -3,10 +3,10 @@ import os
 
 import requests
 import subprocess
-import tempfile
 
 from ..services import GnuLibVersionSymbolsFinder
 from .._logging import make_logger
+from .._util import make_tempdir
 
 
 def _get_logger():
@@ -89,7 +89,7 @@ def get_ubuntu_package_versions_map(package_name: str):
 def get_glibcxx_version_from_debian_package(url: str):
     logger = _get_logger()
 
-    with tempfile.TemporaryDirectory() as d:
+    with make_tempdir() as d:
         deb_path = os.path.join(d, "package.deb")
 
         logger.debug("Downloading {} to {}".format(url, deb_path))
