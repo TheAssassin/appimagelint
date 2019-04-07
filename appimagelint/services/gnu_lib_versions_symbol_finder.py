@@ -2,7 +2,7 @@ import os
 import string
 import subprocess
 
-from appimagelint.services import BinaryWalker
+from ..services import BinaryWalker
 
 
 class GnuLibVersionSymbolsFinder:
