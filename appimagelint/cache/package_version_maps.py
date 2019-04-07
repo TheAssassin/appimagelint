@@ -7,7 +7,7 @@ from .paths import ubuntu_glibcxx_versions_data_path, debian_glibcxx_versions_da
     debian_glibc_versions_data_path, ubuntu_glibc_versions_data_path
 
 
-def _make_cache_class(distro: str, get_map_callback: Callable, file_path: str):
+def _make_cache_class(distro: str, package: str, get_map_callback: Callable, file_path: str):
     class _PackageVersionMap(JSONCacheImplBase):
         @classmethod
         def _cache_file_path(cls):
@@ -15,23 +15,23 @@ def _make_cache_class(distro: str, get_map_callback: Callable, file_path: str):
 
         @classmethod
         def _fetch_data(cls):
-            cls._get_logger().info("Fetching version data for {}".format(distro))
+            cls._get_logger().info("Fetching {} version data for {}".format(package, distro))
             return get_map_callback()
 
     return _PackageVersionMap
 
 
 DebianGlibcVersionsCache = _make_cache_class(
-    "debian", lambda: get_debian_package_versions_map("glibc"), debian_glibc_versions_data_path()
+    "debian", "glibc", lambda: get_debian_package_versions_map("glibc"), debian_glibc_versions_data_path()
 )
 DebianGlibcxxVersionsCache = _make_cache_class(
-    "debian", get_debian_glibcxx_versions_map, debian_glibcxx_versions_data_path()
+    "debian", "glibcxx", get_debian_glibcxx_versions_map, debian_glibcxx_versions_data_path()
 )
 UbuntuGlibcVersionsCache = _make_cache_class(
-    "ubuntu", lambda: get_ubuntu_package_versions_map("glibc"), ubuntu_glibc_versions_data_path()
+    "ubuntu", "glibc", lambda: get_ubuntu_package_versions_map("glibc"), ubuntu_glibc_versions_data_path()
 )
 UbuntuGlibcxxVersionsCache = _make_cache_class(
-    "ubuntu", get_ubuntu_glibcxx_versions_map, ubuntu_glibcxx_versions_data_path()
+    "ubuntu", "glibcxx", get_ubuntu_glibcxx_versions_map, ubuntu_glibcxx_versions_data_path()
 )
 
 
