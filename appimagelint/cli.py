@@ -95,6 +95,7 @@ def run():
             "-O", custom_runtime
         ])
 
+        # no need to bother AppImageLauncher etc.
         os.chmod(custom_runtime, 0o755)
         with open(custom_runtime, "rb+") as f:
             f.seek(8)
