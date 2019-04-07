@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=appimagelint
+Exec=appimagelint
+Icon=appimagelint
+Type=Application
+Terminal=true
+Categories=Utility;
