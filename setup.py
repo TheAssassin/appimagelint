@@ -1,3 +1,5 @@
+import os
+
 from setuptools import setup, find_packages
 
 
@@ -6,7 +8,7 @@ setup(
     version="0.0.1",
     packages=find_packages(),
     license="MIT",
-    long_description=open("README.md").read(),
+    long_description=open(os.path.join(os.path.dirname(__file__), "README.md")).read(),
     install_requires=[
         "coloredlogs",
         "packaging",
