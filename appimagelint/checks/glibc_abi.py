@@ -3,13 +3,13 @@ from typing import Iterator
 
 import packaging.version
 
-from ..cache import load_json
+from ..cache import DistroCodenameMapsCache
+from ..cache.package_version_maps import DebianGlibcVersionsCache, UbuntuGlibcVersionsCache
 from ..cache.common import get_debian_releases, get_ubuntu_releases
 from appimagelint.services.gnu_lib_versions_symbol_finder import GnuLibVersionSymbolsFinder
 from ..services import BinaryWalker
 from ..models import AppImage, TestResult
 from .._logging import make_logger
-from ..cache.paths import debian_glibc_versions_data_path, debian_codename_map_path, ubuntu_glibc_versions_data_path
 
 from . import CheckBase
 
@@ -70,15 +70,15 @@ class GlibcABICheck(CheckBase):
 
     @classmethod
     def _get_debian_codename_map(cls):
-        return load_json(debian_codename_map_path())
+        return DistroCodenameMapsCache.get_data()
 
     @classmethod
     def _get_glibc_debian_versions_map(cls):
-        return load_json(debian_glibc_versions_data_path())
+        return DebianGlibcVersionsCache.get_data()
 
     @classmethod
     def _get_glibc_ubuntu_versions_map(cls):
-        return load_json(ubuntu_glibc_versions_data_path())
+        return UbuntuGlibcVersionsCache.get_data()
 
     @classmethod
     def _check_debian_compat(cls, required_glibc: packaging.version.Version) -> Iterator[TestResult]:
