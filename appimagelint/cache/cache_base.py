@@ -17,7 +17,7 @@ class CacheBase:
         raise NotImplementedError()
 
     @classmethod
-    def get_data(cls, raise_on_error=False) -> Union[Mapping, Iterable]:
+    def get_data(cls, raise_on_error=False):
         """
         Returns cached data.
         If the data is out of date, the method will attempt to update them (if possible).
