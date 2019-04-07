@@ -80,8 +80,8 @@ def download_package_version_maps():
     logger = _get_logger()
 
     for distro, get_map_callback, out_path in [
-        ("debian", _get_debian_package_versions_map, debian_glibc_versions_data_path()),
-        ("ubuntu", _get_ubuntu_package_versions_map, ubuntu_glibc_versions_data_path()),
+        ("debian", lambda: _get_debian_package_versions_map("glibc"), debian_glibc_versions_data_path()),
+        ("ubuntu", lambda: _get_ubuntu_package_versions_map("glibc"), ubuntu_glibc_versions_data_path()),
     ]:
         if os.path.exists(out_path):
             if (os.path.getmtime(out_path) + _CACHE_TIMEOUT) > time.time():
@@ -91,7 +91,7 @@ def download_package_version_maps():
         logger.info("Fetching version data for {}".format(distro))
 
         try:
-            glibc_versions = get_map_callback("glibc")
+            glibc_versions = get_map_callback()
 
         except OSError as e:
             if os.path.exists(out_path):
@@ -152,5 +152,3 @@ def download_distro_codename_maps():
     else:
         with open(out_path, "w") as f:
             json.dump(debian_codename_map, f, indent=2)
-
-
