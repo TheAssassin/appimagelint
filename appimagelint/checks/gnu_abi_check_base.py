@@ -7,6 +7,7 @@ from ..cache.common import get_debian_releases, get_ubuntu_releases
 from ..models import TestResult
 from ..services import BinaryWalker
 from ..models import AppImage
+from .._util import max_version
 from . import CheckBase
 
 
@@ -33,7 +34,8 @@ class GnuAbiCheckBase(CheckBase):
 
         versions.update(self._detect_versions_in_file(self._appimage.path()))
 
-        logger.info("detected required version for runtime: {}".format(max(versions) if versions else "<none>"))
+        logger.info("detected required version for runtime: "
+                    "{}".format(max_version(versions) if versions else "<none>"))
 
         with self._appimage.mount() as mountpoint:
             payload_versions = set()
@@ -50,13 +52,13 @@ class GnuAbiCheckBase(CheckBase):
 
             if payload_versions:
                 logger.info("detected required version for payload: "
-                            "{}".format(max(payload_versions) if versions else "<none>"))
+                            "{}".format(max_version(payload_versions) if versions else "<none>"))
 
         if not versions:
             logger.warning("could not find any dependencies, skipping check")
             return
 
-        required_version = packaging.version.Version(max(versions))
+        required_version = packaging.version.Version(max_version(versions))
         logger.debug("overall required version: {}".format(required_version))
 
         for result in self._check_debian_compat(required_version):

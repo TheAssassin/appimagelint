@@ -7,7 +7,7 @@ import subprocess
 from . import DistroCodenameMapsCache
 from ..services import GnuLibVersionSymbolsFinder
 from .._logging import make_logger
-from .._util import make_tempdir
+from .._util import make_tempdir, max_version
 
 
 def _get_logger():
@@ -114,7 +114,7 @@ def get_debian_glibcxx_versions_map():
     for release in releases:
         url = get_glibcxx_package_url("debian", release)
         versions = get_glibcxx_version_from_debian_package(url)
-        rv[release] = max(versions, key=lambda x: [int(i) for i in x.split(".")])
+        rv[release] = max_version(versions)
 
     return rv
 
@@ -145,6 +145,6 @@ def get_ubuntu_glibcxx_versions_map():
     for release in get_ubuntu_releases():
         url = get_glibcxx_package_url("ubuntu", release)
         versions = get_glibcxx_version_from_debian_package(url)
-        rv[release] = max(versions, key=lambda x: [int(i) for i in x.split(".")])
+        rv[release] = max_version(versions)
 
     return rv
