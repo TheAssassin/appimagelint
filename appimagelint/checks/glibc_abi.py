@@ -6,6 +6,7 @@ from typing import Iterator
 
 import packaging.version
 
+from appimagelint.services.gnu_lib_versions_symbol_finder import GnuLibVersionSymbolsFinder
 from ..services import BinaryWalker
 from ..models import AppImage, TestResult
 from .._logging import make_logger
@@ -27,24 +28,8 @@ class GlibcABICheck(CheckBase):
         return "GNU libc ABI check"
 
     @classmethod
-    def _detect_gnu_lib_versions(cls, pattern, path):
-        data = subprocess.check_output(
-            "strings {} | grep {} || true".format(shlex.quote(path), shlex.quote(pattern)),
-            shell=True
-        ).decode()
-
-        versions = set()
-
-        for line in data.splitlines():
-            version = line.split("@@")[-1].split(pattern)[-1]
-
-            versions.add(packaging.version.parse(version))
-
-        return versions
-
-    @classmethod
     def _detect_glibc_versions(cls, path):
-        return cls._detect_gnu_lib_versions("GLIBC_", path)
+        return GnuLibVersionSymbolsFinder.detect_gnu_lib_versions("GLIBC_", path)
 
     def run(self) -> Iterator[TestResult]:
         glibc_versions = set()
@@ -75,7 +60,7 @@ class GlibcABICheck(CheckBase):
         if not glibc_versions:
             raise ValueError("Could not detect dependency of runtime on glibc")
 
-        required_glibc_version = max(glibc_versions)
+        required_glibc_version = packaging.version.Version(max(glibc_versions))
         logger.debug("overall required glibc version: {}".format(required_glibc_version))
 
         for result in self._check_debian_compat(required_glibc_version):
