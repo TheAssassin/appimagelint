@@ -48,20 +48,21 @@ def parse_args():
 
 
 def update_cached_data():
-    from .cache import update_package_version_maps, update_distro_codename_maps
+    from .cache import DistroCodenameMapsCache, PackageVersionMapsCache
 
     logger = _logging.make_logger("setup")
 
     # in case there's a problem with the download and there's no existing data file, we log error and then abort the
     # installation
     try:
-        update_package_version_maps()
+        # update if necessary
+        DistroCodenameMapsCache.get_data()
     except Exception:
         logger.error("Error: Failed to download package version maps, aborting")
         raise
 
     try:
-        update_distro_codename_maps()
+        PackageVersionMapsCache.update_if_necessary()
     except Exception:
         logger.error("Error: Failed to download distro codename maps, aborting")
         raise

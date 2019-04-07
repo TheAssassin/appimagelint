@@ -81,7 +81,7 @@ def get_ubuntu_package_versions_map(package_name: str):
 
         version = data[pkg_ver_off:pkg_ver_off+512].splitlines()[0].split("Version: ")[-1]
         parsed_version = ".".join(version.split(".")[:3]).split("-")[0]
-        versions_map[release] = [parsed_version]
+        versions_map[release] = parsed_version
 
     return versions_map
 
@@ -141,26 +141,5 @@ def get_ubuntu_glibcxx_versions_map():
         url = get_glibcxx_package_url("ubuntu", release)
         rv[release] = list(sorted(get_glibcxx_version_from_debian_package(url),
                                   key=lambda x: [int(i) for i in x.split(".")]))
-
-    return rv
-
-
-def get_debian_distro_codename_map():
-    rv = {}
-
-    for suite in get_debian_releases():
-        headers = {"Range": "bytes=0-512"}
-        url = "https://ftp.fau.de/debian/dists/{}/Release".format(suite)
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-
-        for line in response.text.splitlines():
-            prefix = "Codename:"
-
-            if line.startswith(prefix):
-                rv[suite] = line.split(prefix)[-1].strip()
-                break
-        else:
-            raise ValueError("could not find Release file for suite {} on Debian mirror".format(suite))
 
     return rv

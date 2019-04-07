@@ -1,8 +1,10 @@
 import json
+import os
+import time
 from typing import Union, Iterable, Mapping
 
-from . import OutOfDateError
-from ..setup.codebase_hasher import CodebaseHasher
+from . import OutOfDateError, _get_logger
+from .codebase_hasher import CodebaseHasher
 
 
 # use a method to simulate "const values"
@@ -26,14 +28,23 @@ def load_json(path):
         with open(path, "r") as f:
             json_root = json.load(f)
     except FileNotFoundError:
-        raise OutOfDateError("cache file missing, forcing update for initial download")
+        raise OutOfDateError("cache file missing, update required")
+
+    cached_codebase_digest = json_root["codebase_digest"]
+    data = json_root["data"]
+
+    mtime = os.path.getmtime(path)
+    if mtime + cache_timeout() < time.time():
+        # should be safe to ignore, forwarding data
+        raise OutOfDateError("cache file outdated, update required", cached_data=data)
 
     codebase_digest = CodebaseHasher().digest_md5()
     try:
-        if json_root["codebase_digest"] != codebase_digest:
-            raise OutOfDateError("codebase changed since last update, forcing update")
+        if cached_codebase_digest != codebase_digest:
+            # should be safe to ignore, forwarding data
+            raise OutOfDateError("codebase changed since last update, forcing update", cached_data=data)
 
-        return json_root["data"]
+        return data
 
     # capture all "invalid data format" kind of errors and force update
     except KeyError:

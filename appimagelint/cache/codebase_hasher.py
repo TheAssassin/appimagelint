@@ -1,12 +1,15 @@
-from appimagelint import cache, setup
 import hashlib
 import os
 
+from typing import Iterable
+
+from appimagelint import cache
+
 
 class CodebaseHasher:
-    def __init__(self, modules=None):
+    def __init__(self, modules: Iterable=None):
         if modules is None:
-            modules = [cache, setup]
+            modules = [cache]
 
         self._modules = modules
 

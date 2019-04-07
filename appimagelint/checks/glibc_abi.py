@@ -1,17 +1,15 @@
-import json
 import logging
-import shlex
-import subprocess
 from typing import Iterator
 
 import packaging.version
 
-from appimagelint.cache import load_json
+from ..cache import load_json
+from ..cache.common import get_debian_releases, get_ubuntu_releases
 from appimagelint.services.gnu_lib_versions_symbol_finder import GnuLibVersionSymbolsFinder
 from ..services import BinaryWalker
 from ..models import AppImage, TestResult
 from .._logging import make_logger
-from ..setup.paths import debian_glibc_versions_data_path, debian_codename_map_path, ubuntu_glibc_versions_data_path
+from ..cache.paths import debian_glibc_versions_data_path, debian_codename_map_path, ubuntu_glibc_versions_data_path
 
 from . import CheckBase
 
@@ -87,21 +85,26 @@ class GlibcABICheck(CheckBase):
         codename_map = cls._get_debian_codename_map()
         glibc_versions_map = cls._get_glibc_debian_versions_map()
 
-        for suite in ["oldstable", "stable", "testing", "unstable"]:
-            codename = codename_map[suite]
-            max_supported_glibc = glibc_versions_map[codename]
+        for release in get_debian_releases():
+            codename = codename_map[release]
+
+            try:
+                max_supported_glibc = glibc_versions_map[codename]
+            except KeyError:
+                cls.get_logger().warning("could not find glibc version for {}, trying backports".format(release))
+                max_supported_glibc = glibc_versions_map["{}-backports".format(codename)]
 
             should_run = required_glibc <= packaging.version.parse(max_supported_glibc)
 
-            cls.get_logger().debug("Debian {} max supported glibc version: {}".format(suite, max_supported_glibc))
-            yield TestResult(should_run, "AppImage can run on Debian {} ({})".format(suite, codename))
+            cls.get_logger().debug("Debian {} max supported glibc version: {}".format(release, max_supported_glibc))
+            yield TestResult(should_run, "AppImage can run on Debian {} ({})".format(release, codename))
 
     @classmethod
     def _check_ubuntu_compat(cls, required_glibc: packaging.version.Version) -> Iterator[TestResult]:
         glibc_versions_map = cls._get_glibc_ubuntu_versions_map()
 
-        for release, glibc_versions in glibc_versions_map.items():
-            max_supported_glibc = max(glibc_versions)
+        for release in get_ubuntu_releases():
+            max_supported_glibc = glibc_versions_map[release]
 
             should_run = required_glibc <= packaging.version.Version(max_supported_glibc)
 
