@@ -1,11 +1,14 @@
 import os
-import string
 import subprocess
+from typing import List
 
+from .._logging import make_logger
 from ..services import BinaryWalker
 
 
 class GnuLibVersionSymbolsFinder:
+    _logger = make_logger("gnu_lib_versions_symbols_finder")
+
     def __init__(self, dirpath: str):
         if not os.path.isdir(dirpath):
             raise FileNotFoundError("could not find directory {}".format(repr(dirpath)))
@@ -14,33 +17,43 @@ class GnuLibVersionSymbolsFinder:
 
     @classmethod
     def detect_gnu_lib_versions(cls, pattern, path):
-        data = subprocess.check_output(["strings", path]).decode()
+        env = dict(os.environ)
+        env["LC_ALL"] = "C"
+        env["LANGUAGE"] = "C"
 
-        versions = set()
+        versions = []
 
-        for line in data.splitlines():
-            if not pattern in line:
+        data: str = subprocess.check_output(["readelf", "-V", path], env=env).decode()
+        lines: List[str] = data.splitlines()
+
+        in_req_section = False
+        for line in lines:
+            if ".gnu.version_r" in line:
+                in_req_section = True
                 continue
 
-            if "_{}".format(pattern) in line:
-                continue
+            if in_req_section:
+                if not line.strip():
+                    break
 
-            # a few known invalid values (saves running the for loop below)
-            if "DEBUG_MESSAGE_LENGTH" in line or "PRIVATE" in line:
-                continue
+                parts = line.split()
 
-            version = line.split("@@")[-1].split(pattern)[-1]
+                if parts[1].lower() != "name:":
+                    continue
 
-            def is_valid_version(version):
-                for c in version:
-                    if c not in string.digits + ".":
-                        return False
-                return True
+                symbol = parts[2]
 
-            if not is_valid_version(version):
-                continue
+                if pattern in symbol:
+                    version = symbol.split(pattern)[1]
 
-            versions.add(version)
+                    for c in version:
+                        if c not in "0123456789.":
+                            cls._logger.debug("ignoring invalid version {} (parsed from {})".format(
+                                repr(version), repr(symbol))
+                            )
+                            break
+                    else:
+                        versions.append(version)
 
         return versions
 
