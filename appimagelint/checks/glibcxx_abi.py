@@ -10,7 +10,7 @@ class GlibcxxABICheck(GnuAbiCheckBase):
 
     @staticmethod
     def _library_id():
-        return "glibc"
+        return "glibcxx"
 
     @staticmethod
     def name():
