@@ -1,13 +1,11 @@
 import argparse
 import logging
-import os
-import subprocess
 import sys
 
-from appimagelint.cache.runtime_cache import AppImageRuntimeCache
+from .cache.runtime_cache import AppImageRuntimeCache
+from .reports import JSONReport
 from .services.result_formatter import ResultFormatter
 from .models import AppImage
-from ._util import make_tempdir
 from . import _logging
 from .checks import GlibcABICheck, GlibcxxABICheck
 
@@ -39,6 +37,10 @@ def parse_args():
                         action="store_const", const=True, default=False,
                         help="Force colored output")
 
+    parser.add_argument("--json-report",
+                        dest="json_report", nargs="?", default="None",
+                        help="Write results to file in machine-readable form (JSON)")
+
     parser.add_argument("path",
                         nargs="+",
                         help="AppImage to review")
@@ -66,8 +68,14 @@ def run():
     # also, it's safer not to rely on the embedded runtime
     custom_runtime = AppImageRuntimeCache.get_data()
 
+    # results logs are written immediately, but maybe we want to generate additional reports
+    # for this purpose, we collect all results
+    results = {}
+
     try:
         for path in args.path:
+            results[path] = []
+
             logger.info("Checking AppImage {}".format(path))
 
             appimage = AppImage(path, custom_runtime=custom_runtime)
@@ -83,7 +91,12 @@ def run():
                 check = check_cls(appimage)
 
                 for testres in check.run():
+                    results[path].append(testres)
                     check.get_logger().info(formatter.format(testres))
+
+        if args.json_report:
+            report = JSONReport(results)
+            report.write(args.json_report)
 
     except KeyboardInterrupt:
         logger.critical("process interrupted by user")
