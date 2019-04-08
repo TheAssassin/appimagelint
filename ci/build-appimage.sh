@@ -42,8 +42,6 @@ export OUTPUT=appimagelint-x86_64.AppImage
     -i "$REPO_ROOT"/resources/appimagelint.svg -d "$REPO_ROOT"/resources/appimagelint.desktop \
     --output appimage --custom-apprun "$REPO_ROOT"/resources/AppRun.sh
 
-bash
-
 # test AppImage with itself
 ./appimagelint-x86_64.AppImage appimagelint-x86_64.AppImage
 
