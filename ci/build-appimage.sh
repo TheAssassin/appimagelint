@@ -37,7 +37,12 @@ export PIP_REQUIREMENTS="."
 export PIP_WORKDIR="$REPO_ROOT"
 export OUTPUT=appimagelint-x86_64.AppImage
 
-./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin conda -i "$REPO_ROOT"/resources/appimagelint.svg -d "$REPO_ROOT"/resources/appimagelint.desktop --output appimage --custom-apprun "$REPO_ROOT"/resources/AppRun
+./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin conda \
+    -e $(which readelf) \
+    -i "$REPO_ROOT"/resources/appimagelint.svg -d "$REPO_ROOT"/resources/appimagelint.desktop \
+    --output appimage --custom-apprun "$REPO_ROOT"/resources/AppRun.sh
+
+bash
 
 # test AppImage with itself
 ./appimagelint-x86_64.AppImage appimagelint-x86_64.AppImage
