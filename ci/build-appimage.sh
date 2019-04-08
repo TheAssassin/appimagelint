@@ -43,6 +43,7 @@ export OUTPUT=appimagelint-x86_64.AppImage
     --output appimage --custom-apprun "$REPO_ROOT"/resources/AppRun.sh
 
 # test AppImage with itself
-./appimagelint-x86_64.AppImage appimagelint-x86_64.AppImage
+./appimagelint-x86_64.AppImage appimagelint-x86_64.AppImage --json-report appimagelint-report.json
+cat appimagelint-report.json
 
 mv appimagelint*.AppImage "$OLD_CWD"
