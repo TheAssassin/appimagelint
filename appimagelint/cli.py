@@ -74,7 +74,7 @@ def run():
 
     try:
         for path in args.path:
-            results[path] = []
+            results[path] = {}
 
             logger.info("Checking AppImage {}".format(path))
 
@@ -90,8 +90,10 @@ def run():
                 logger.info("Running check \"{}\"".format(check_cls.name()))
                 check = check_cls(appimage)
 
+                results[path][check] = []
+
                 for testres in check.run():
-                    results[path].append(testres)
+                    results[path][check].append(testres)
                     check.get_logger().info(formatter.format(testres))
 
         if args.json_report:

@@ -14,11 +14,15 @@ class JSONReport(ReportBase):
             "results": {
                 path: [
                     {
-                        "success": res.success(),
-                        "message": res.message(),
-                    } for res in results
-                ]
-                for path, results in self._results.items()
+                        "name": check.name(),
+                        "results": [
+                            {
+                                "success": res.success(),
+                                "message": res.message()
+                            } for res in results
+                        ]
+                    } for check, results in checks.items()
+                ] for path, checks in self._results.items()
             }
         }
 
