@@ -1,7 +1,4 @@
-import logging
-
 from . import GnuAbiCheckBase
-from .._logging import make_logger
 from ..cache.package_version_maps import DebianGlibcxxVersionsCache, UbuntuGlibcxxVersionsCache
 from ..models import AppImage
 from ..services import GnuLibVersionSymbolsFinder
@@ -12,8 +9,8 @@ class GlibcxxABICheck(GnuAbiCheckBase):
         super().__init__(appimage)
 
     @staticmethod
-    def get_logger() -> logging.Logger:
-        return make_logger("glibcxx_abi_check")
+    def _library_id():
+        return "glibc"
 
     @staticmethod
     def name():

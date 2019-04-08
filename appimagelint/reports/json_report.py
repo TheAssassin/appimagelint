@@ -17,6 +17,7 @@ class JSONReport(ReportBase):
                         "name": check.name(),
                         "results": [
                             {
+                                "id": res.id(),
                                 "success": res.success(),
                                 "message": res.message()
                             } for res in results

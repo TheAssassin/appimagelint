@@ -2,6 +2,7 @@ import logging
 import packaging.version
 from typing import Iterator
 
+from appimagelint._logging import make_logger
 from ..cache import DebianCodenameMapCache
 from ..cache.common import get_debian_releases, get_ubuntu_releases
 from ..models import TestResult
@@ -15,9 +16,13 @@ class GnuAbiCheckBase(CheckBase):
     def __init__(self, appimage: AppImage):
         super().__init__(appimage)
 
-    @staticmethod
-    def get_logger() -> logging.Logger:
-        raise NotImplementedError()
+    @classmethod
+    def get_logger(cls) -> logging.Logger:
+        return make_logger("{}_abi_check".format(cls._library_id()))
+    
+    @classmethod
+    def _test_result_id_prefix(cls):
+        return "{}_abi_check".format(cls._library_id())
 
     @staticmethod
     def name():
@@ -25,6 +30,10 @@ class GnuAbiCheckBase(CheckBase):
 
     @classmethod
     def _detect_versions_in_file(cls, path):
+        raise NotImplementedError
+
+    @staticmethod
+    def _library_id():
         raise NotImplementedError
 
     def run(self) -> Iterator[TestResult]:
@@ -94,9 +103,12 @@ class GnuAbiCheckBase(CheckBase):
                 max_supported_version = versions_map["{}-backports".format(codename)]
 
             should_run = required_version <= packaging.version.parse(max_supported_version)
+            
+            test_result_id = "{}_{}_{}".format(cls._test_result_id_prefix(), "debian", release)
+            test_result_msg = "AppImage can run on Debian {} ({})".format(release, codename)
 
             cls.get_logger().debug("Debian {} max supported version: {}".format(release, max_supported_version))
-            yield TestResult(should_run, "AppImage can run on Debian {} ({})".format(release, codename))
+            yield TestResult(should_run, test_result_id, test_result_msg)
 
     @classmethod
     def _check_ubuntu_compat(cls, required_version: packaging.version.Version) -> Iterator[TestResult]:
@@ -106,6 +118,9 @@ class GnuAbiCheckBase(CheckBase):
             max_supported_version = versions_map[release]
 
             should_run = required_version <= packaging.version.Version(max_supported_version)
+            
+            test_result_id = "{}_{}_{}".format(cls._test_result_id_prefix(), "ubuntu", release)
+            test_result_msg = "AppImage can run on Ubuntu {}".format(release)
 
             cls.get_logger().debug("Ubuntu {} max supported version: {}".format(release, max_supported_version))
-            yield TestResult(should_run, "AppImage can run on Ubuntu {}".format(release))
+            yield TestResult(should_run, test_result_id, test_result_msg)
