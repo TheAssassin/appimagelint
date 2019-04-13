@@ -2,7 +2,8 @@ import logging
 import packaging.version
 from typing import Iterator
 
-from appimagelint._logging import make_logger
+from .._logging import make_logger
+from ..services import GnuLibVersionSymbolsFinder
 from ..cache import DebianCodenameMapCache
 from ..cache.common import get_debian_releases, get_ubuntu_releases
 from ..models import TestResult
@@ -13,6 +14,8 @@ from . import CheckBase
 
 
 class GnuAbiCheckBase(CheckBase):
+    _gnu_lib_versions_symbol_finder = GnuLibVersionSymbolsFinder(query_reqs=True, query_deps=False)
+
     def __init__(self, appimage: AppImage):
         super().__init__(appimage)
 

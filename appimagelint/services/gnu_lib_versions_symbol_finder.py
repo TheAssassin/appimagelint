@@ -7,16 +7,15 @@ from ..services import BinaryWalker
 
 
 class GnuLibVersionSymbolsFinder:
-    _logger = make_logger("gnu_lib_versions_symbols_finder")
-
-    def __init__(self, dirpath: str):
-        if not os.path.isdir(dirpath):
-            raise FileNotFoundError("could not find directory {}".format(repr(dirpath)))
-
-        self._dirpath = dirpath
-
     @classmethod
-    def detect_gnu_lib_versions(cls, pattern, path):
+    def _get_logger(self):
+        self._logger = make_logger("gnu_lib_versions_symbols_finder")
+
+    def __init__(self, query_reqs: bool = True, query_deps: bool = False):
+        self._query_reqs = query_reqs
+        self._query_deps = query_deps
+
+    def detect_gnu_lib_versions(self, pattern, path):
         env = dict(os.environ)
         env["LC_ALL"] = "C"
         env["LANGUAGE"] = "C"
@@ -26,41 +25,56 @@ class GnuLibVersionSymbolsFinder:
         data: str = subprocess.check_output(["readelf", "-V", path], env=env).decode()
         lines: List[str] = data.splitlines()
 
-        in_req_section = False
-        for line in lines:
-            if ".gnu.version_r" in line:
-                in_req_section = True
-                continue
+        elf_sections = []
+        if self._query_deps:
+            elf_sections.append(".gnu.version_d")
+        if self._query_reqs:
+            elf_sections.append(".gnu.version_r")
 
-            if in_req_section:
+        for elf_section_name in elf_sections:
+            in_req_section = False
+            for line in lines:
+                if elf_section_name in line:
+                    in_req_section = True
+                elif not in_req_section:
+                    continue
+
+                # end of section
                 if not line.strip():
                     break
 
                 parts = line.split()
 
-                if parts[1].lower() != "name:":
-                    continue
+                for index, part in enumerate(parts):
+                    try:
+                        if part.lower() != "name:":
+                            continue
+                    except IndexError:
+                        continue
 
-                symbol = parts[2]
+                    symbol = parts[index+1]
 
-                if pattern in symbol:
-                    version = symbol.split(pattern)[1]
+                    if pattern in symbol:
+                        version = symbol.split(pattern)[1]
 
-                    for c in version:
-                        if c not in "0123456789.":
-                            cls._logger.debug("ignoring invalid version {} (parsed from {})".format(
-                                repr(version), repr(symbol))
-                            )
-                            break
-                    else:
-                        versions.append(version)
+                        for c in version:
+                            if c not in "0123456789.":
+                                self._get_logger().debug("ignoring invalid version {} (parsed from {})".format(
+                                    repr(version), repr(symbol))
+                                )
+                                break
+                        else:
+                            versions.append(version)
 
         return versions
 
-    def check_all_executables(self, prefix: str):
+    def check_all_executables(self, prefix: str, dirpath: str):
+        if not os.path.isdir(dirpath):
+            raise FileNotFoundError("could not find directory {}".format(repr(dirpath)))
+
         versions = set()
 
-        for binary in BinaryWalker(self._dirpath):
+        for binary in BinaryWalker(dirpath):
             versions.update(self.detect_gnu_lib_versions(prefix, binary))
 
         return versions

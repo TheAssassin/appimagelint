@@ -1,24 +1,27 @@
+import logging
+
 from . import GnuAbiCheckBase
+from .._logging import make_logger
 from ..cache.package_version_maps import DebianGlibcVersionsCache, UbuntuGlibcVersionsCache
 from ..models import AppImage
 from ..services import GnuLibVersionSymbolsFinder
 
 
-class GlibcABICheck(GnuAbiCheckBase):
+class LibkeyfileABICheck(GnuAbiCheckBase):
     def __init__(self, appimage: AppImage):
         super().__init__(appimage)
 
     @staticmethod
-    def _library_id():
-        return "glibc"
+    def get_logger() -> logging.Logger:
+        return make_logger("libkeyfile_abi_check")
 
     @staticmethod
     def name():
-        return "GNU libc ABI check"
+        return "libkeyfile ABI check"
 
     @classmethod
     def _detect_versions_in_file(cls, path):
-        return cls._gnu_lib_versions_symbol_finder.detect_gnu_lib_versions("GLIBC_", path)
+        return GnuLibVersionSymbolsFinder.detect_gnu_lib_versions("KEYFILE_", path)
 
     @classmethod
     def _get_debian_versions_map(cls):

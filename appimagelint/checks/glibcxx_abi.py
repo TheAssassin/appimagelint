@@ -18,7 +18,7 @@ class GlibcxxABICheck(GnuAbiCheckBase):
 
     @classmethod
     def _detect_versions_in_file(cls, path):
-        return GnuLibVersionSymbolsFinder.detect_gnu_lib_versions("GLIBCXX_", path)
+        return cls._gnu_lib_versions_symbol_finder.detect_gnu_lib_versions("GLIBCXX_", path)
 
     @classmethod
     def _get_debian_versions_map(cls):

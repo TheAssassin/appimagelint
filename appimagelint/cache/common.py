@@ -100,8 +100,8 @@ def get_glibcxx_version_from_debian_package(url: str):
         subprocess.check_call(["wget", "-q", url, "-O", deb_path], stdout=subprocess.DEVNULL)
         subprocess.check_call(["dpkg", "-x", deb_path, out_path], stdout=subprocess.DEVNULL)
 
-        finder = GnuLibVersionSymbolsFinder(out_path)
-        return finder.check_all_executables("GLIBCXX_")
+        finder = GnuLibVersionSymbolsFinder(query_deps=True, query_reqs=False)
+        return finder.check_all_executables("GLIBCXX_", out_path)
 
 
 def get_debian_glibcxx_versions_map():
