@@ -13,4 +13,4 @@ from .distro_codenames import DebianCodenameMapCache
 from .package_version_maps import PackageVersionMapsCache
 
 
-__all__ = ("OutOfDateError", "store_json", "load_json", "CacheBase",)
+__all__ = ("OutOfDateError", "store_json", "load_json", "CacheBase", "DebianCodenameMapCache",)
