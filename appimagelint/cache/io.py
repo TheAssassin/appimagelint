@@ -27,8 +27,8 @@ def load_json(path):
     try:
         with open(path, "r") as f:
             json_root = json.load(f)
-    except FileNotFoundError:
-        raise OutOfDateError("cache file missing, update required")
+    except FileNotFoundError as e:
+        raise OutOfDateError("cache file missing, update required") from e
 
     cached_codebase_digest = json_root["codebase_digest"]
     data = json_root["data"]
@@ -47,5 +47,5 @@ def load_json(path):
         return data
 
     # capture all "invalid data format" kind of errors and force update
-    except KeyError:
-        raise OutOfDateError("file in invalid format, forcing update")
+    except KeyError as e:
+        raise OutOfDateError("file in invalid format, forcing update") from e
