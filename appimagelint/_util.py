@@ -34,4 +34,7 @@ def max_version(data: Iterable[str]) -> str:
     :return: max version
     """
 
-    return max(data, key=get_version_key)
+    try:
+        return max(data, key=get_version_key)
+    except ValueError as e:
+        raise ValueError("passed empty sequence") from e
