@@ -33,6 +33,7 @@ chmod +x linuxdeploy*.AppImage
 chmod +x linuxdeploy*.sh
 
 
+export CONDA_PACKAGES="Pillow"
 export PIP_REQUIREMENTS="."
 export PIP_WORKDIR="$REPO_ROOT"
 export OUTPUT=appimagelint-x86_64.AppImage
