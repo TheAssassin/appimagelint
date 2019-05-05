@@ -14,6 +14,7 @@ setup(
         "packaging",
         "requests",
         "xdg",
+        "pillow",
     ],
     entry_points={
         "console_scripts": [

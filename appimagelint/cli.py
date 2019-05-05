@@ -2,6 +2,7 @@ import argparse
 import logging
 import sys
 
+from appimagelint.checks import IconsCheck
 from .cache.runtime_cache import AppImageRuntimeCache
 from .reports import JSONReport
 from .services.result_formatter import ResultFormatter
@@ -38,7 +39,7 @@ def parse_args():
                         help="Force colored output")
 
     parser.add_argument("--json-report",
-                        dest="json_report", nargs="?", default="None",
+                        dest="json_report", nargs="?", default=None,
                         help="Write results to file in machine-readable form (JSON)")
 
     parser.add_argument("path",
@@ -86,7 +87,7 @@ def run():
 
             formatter = ResultFormatter(**kwargs)
 
-            for check_cls in [GlibcABICheck, GlibcxxABICheck]:
+            for check_cls in [GlibcABICheck, GlibcxxABICheck, IconsCheck]:
                 logger.info("Running check \"{}\"".format(check_cls.name()))
                 check = check_cls(appimage)
 
