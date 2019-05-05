@@ -1,7 +1,8 @@
 import glob
 import os.path as op
 import re
-from typing import Tuple
+from typing import Tuple, Union
+from xml.etree import ElementTree as ET
 
 from PIL import Image
 
@@ -90,6 +91,7 @@ class IconsCheck(CheckBase):
                         main_icon_check_results = []
                         for icon in appdir_root_icons:
                             valid = self._check_icon_for_valid_resolution(icon)
+                            main_icon_check_results.append(valid)
 
                         # if only one of the checks failed, we can't guarantee a working root icon
                         root_icon_valid = all(main_icon_check_results)
@@ -138,6 +140,8 @@ class IconsCheck(CheckBase):
                     path_res = None
 
                     def extract_res_from_path_component(s):
+                        if s == "scalable":
+                            return s
                         return tuple([int(i) for i in s.split("x")])
 
                     if len(split_path) != 4 or split_path[2] != "apps":
@@ -181,18 +185,76 @@ class IconsCheck(CheckBase):
     def get_logger():
         return make_logger("icon_check")
 
-    def _get_icon_res(self, icon_path: str) -> Tuple[int]:
+    def _get_svg_icon_res(self, icon_path: str) -> Union[Tuple[float, float], None]:
+        with open(icon_path) as f:
+            # own crappy SVG parsing just to get the height and width, if possible
+            # only needed for the warning about non-square-ish icons
+            et = ET.parse(f)
+            root: ET.Element = et.getroot()
+
+            height = root.attrib.get("height", None)
+            width = root.attrib.get("width", None)
+
+            if not height or not width:
+                self.get_logger().error("Could not detect resolution of SVG icon: %s", icon_path)
+                return
+
+            return float(height), float(width)
+
+    def _is_svg(self, icon_path: str) -> bool:
+        # "obvious" SVG files can be parsed directly as such
+        if op.splitext(icon_path)[-1] == ".svg":
+            return True
+
+        # for .DirIcon we actually have to look into the file to check if it's an SVG by guessing based on file
+        # contents
+        with open(icon_path) as f:
+            data = f.read()
+
+            if not "svg" in data:
+                return False
+
+            try:
+                root: ET.Element = ET.fromstring(data)
+
+                # Inkscape makes this yield some tags like '{http://www.w3.org/2000/svg}svg'
+                # therefore we guess that anything ending in "svg" is good enough
+                return root.tag.endswith("svg")
+
+            except:
+                pass
+
+        return False
+
+    def _get_icon_res(self, icon_path: str) -> Union[Tuple[int, int], str, None]:
         logger = self.get_logger()
 
-        try:
-            logger.debug("Opening image: %s", icon_path)
-            im = Image.open(icon_path)
+        logger.debug("Opening image: %s", icon_path)
 
-            logger.debug("format: %s -- resolution: %s, mode: %s", im.format, im.size, im.mode)
-            return im.size
+        is_svg = self._is_svg(icon_path)
 
-        except:  # noqa
-            logger.exception("Failed to identify icon %s", icon_path, )
+        if is_svg:
+            try:
+                resolution = self._get_svg_icon_res(icon_path)
+            except ET.ParseError as e:
+                logger.debug("Failed to parse SVG file: %s".format(e))
+                return None
+
+            # they need to be equivalent when rounded to integer only
+            if round(resolution[0]) != round(resolution[1]):
+                self.get_logger().warning("Non-square scalable icon found: %s", icon_path)
+
+            return "scalable"
+
+        else:
+            try:
+                im = Image.open(icon_path)
+
+                logger.debug("format: %s -- resolution: %s, mode: %s", im.format, im.size, im.mode)
+                return im.size
+
+            except:  # noqa
+                logger.exception("Failed to identify icon %s", icon_path, )
 
     def _check_icon_for_valid_resolution(self, icon_path: str) -> bool:
         res = self._get_icon_res(icon_path)
@@ -200,4 +262,11 @@ class IconsCheck(CheckBase):
         if not res:
             return False
 
-        return res[0] in self._VALID_RESOLUTIONS and res[1] in self._VALID_RESOLUTIONS
+        if op.splitext(icon_path)[-1] == ".svg":
+            return res == "scalable"
+
+        # .DirIcon exception
+        if op.basename(icon_path) == ".DirIcon" and res == "scalable":
+            return True
+
+        return res[0] == res[1] and res[0] in self._VALID_RESOLUTIONS and res[1] in self._VALID_RESOLUTIONS
