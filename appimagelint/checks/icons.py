@@ -209,12 +209,12 @@ class IconsCheck(CheckBase):
         # for .DirIcon we actually have to look into the file to check if it's an SVG by guessing based on file
         # contents
         with open(icon_path) as f:
-            data = f.read()
-
-            if not "svg" in data:
-                return False
-
             try:
+                data = f.read()
+
+                if not "svg" in data:
+                    return False
+
                 root: ET.Element = ET.fromstring(data)
 
                 # Inkscape makes this yield some tags like '{http://www.w3.org/2000/svg}svg'
