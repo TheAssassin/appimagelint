@@ -9,7 +9,7 @@ from ..services import BinaryWalker
 class GnuLibVersionSymbolsFinder:
     @classmethod
     def _get_logger(self):
-        self._logger = make_logger("gnu_lib_versions_symbols_finder")
+        return make_logger("gnu_lib_versions_symbols_finder")
 
     def __init__(self, query_reqs: bool = True, query_deps: bool = False):
         self._query_reqs = query_reqs
