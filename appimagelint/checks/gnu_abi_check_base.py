@@ -99,13 +99,23 @@ class GnuAbiCheckBase(CheckBase):
         for release in get_debian_releases():
             codename = codename_map[release]
 
+            max_supported_version = None
             try:
                 max_supported_version = versions_map[codename]
             except KeyError:
                 cls.get_logger().warning("could not find version for {}, trying backports".format(release))
-                max_supported_version = versions_map["{}-backports".format(codename)]
 
-            should_run = required_version <= packaging.version.parse(max_supported_version)
+                try:
+                    max_supported_version = versions_map["{}-backports".format(codename)]
+                except KeyError:
+                    cls.get_logger().error(
+                        "could not find version for {} in backports either, aborting check".format(release)
+                    )
+
+            if max_supported_version is None:
+                should_run = False
+            else:
+                should_run = required_version <= packaging.version.parse(max_supported_version)
             
             test_result_id = "{}_{}_{}".format(cls._test_result_id_prefix(), "debian", release)
             test_result_msg = "AppImage can run on Debian {} ({})".format(release, codename)
