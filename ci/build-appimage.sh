@@ -45,6 +45,8 @@ export PIP_WORKDIR="$REPO_ROOT"
 export OUTPUT=appimagelint-x86_64.AppImage
 export VERSION="$SETUPPY_VERSION-git$COMMIT"
 
+mkdir -p AppDir/usr/share/metainfo/ && cp resources/appimagelint.appdata.xml AppDir/usr/share/metainfo/
+
 ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin conda \
     -e $(which readelf) \
     -i "$REPO_ROOT"/resources/appimagelint.svg -d "$REPO_ROOT"/resources/appimagelint.desktop \
