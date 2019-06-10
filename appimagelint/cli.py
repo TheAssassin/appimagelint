@@ -1,5 +1,6 @@
 import argparse
 import logging
+import os
 import sys
 
 from appimagelint.checks import IconsCheck
@@ -11,11 +12,40 @@ from . import _logging
 from .checks import GlibcABICheck, GlibcxxABICheck
 
 
+def get_version():
+    try:
+        import pkg_resources
+        version = pkg_resources.require("appimagelint")[0].version
+    except ImportError:
+        version = "unknown"
+
+    APPDIR = os.environ.get("APPDIR", None)
+
+    git_commit = "unknown"
+
+    if APPDIR is not None:
+        try:
+            with open(os.path.join(APPDIR, "commit")) as f:
+                git_commit = f.read().strip(" \n\r")
+        except FileNotFoundError:
+            pass
+
+    version += "-git" + git_commit
+
+    return version
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         prog="appimagelint",
         description="Run compatibility and other checks on AppImages automatically, "
                     "and provide human-understandable feedback"
+    )
+
+    parser.add_argument("--version",
+                        dest="display_version",
+                        action="version", version=get_version(),
+                        help="Display version and exit"
     )
 
     parser.add_argument("--debug",
@@ -53,6 +83,10 @@ def parse_args():
 
 def run():
     args = parse_args()
+
+    if getattr(args, "display_version", False):
+        print(get_version())
+        return
 
     # setup
     _logging.setup(

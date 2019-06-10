@@ -24,7 +24,14 @@ trap cleanup EXIT
 REPO_ROOT=$(readlink -f $(dirname $(dirname "$0")))
 OLD_CWD=$(readlink -f .)
 
+SETUPPY_VERSION=$(cat "$REPO_ROOT"/setup.py | grep version | cut -d'"' -f2)
+
 pushd "$BUILD_DIR"
+
+mkdir -p AppDir
+
+COMMIT=$(cd "$REPO_ROOT" && git rev-parse --short HEAD)
+echo "$COMMIT" > AppDir/commit
 
 wget https://github.com/TheAssassin/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
 wget https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-conda/master/linuxdeploy-plugin-conda.sh
@@ -32,12 +39,11 @@ wget https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-conda/mast
 chmod +x linuxdeploy*.AppImage
 chmod +x linuxdeploy*.sh
 
-
 export CONDA_PACKAGES="Pillow"
 export PIP_REQUIREMENTS="."
 export PIP_WORKDIR="$REPO_ROOT"
 export OUTPUT=appimagelint-x86_64.AppImage
-export VERSION=$(git rev-parse --short HEAD)
+export VERSION="$SETUPPY_VERSION-git$COMMIT"
 
 ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin conda \
     -e $(which readelf) \
