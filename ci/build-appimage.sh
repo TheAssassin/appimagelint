@@ -37,6 +37,7 @@ export CONDA_PACKAGES="Pillow"
 export PIP_REQUIREMENTS="."
 export PIP_WORKDIR="$REPO_ROOT"
 export OUTPUT=appimagelint-x86_64.AppImage
+export VERSION=$(git rev-parse --short HEAD)
 
 ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin conda \
     -e $(which readelf) \
