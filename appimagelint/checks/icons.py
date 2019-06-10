@@ -112,7 +112,9 @@ class IconsCheck(CheckBase):
 
             for abs_path in other_icons:
                 # check if this icon even belongs to here
+                rel_path = op.relpath(abs_path, op.join(mountpoint, "usr/share/icons"))
                 filename = op.basename(abs_path)
+
                 split_fname = op.splitext(filename)
 
                 # not an error, but means we don't have to process that file any further
@@ -131,7 +133,6 @@ class IconsCheck(CheckBase):
                         other_icons_checks_success = False
 
                     logger.debug("checking whether icon is in correct location")
-                    rel_path = op.relpath(abs_path, op.join(mountpoint, "usr/share/icons"))
 
                     # split path into the interesting components: icon theme, resolution and actual filename
                     split_path = rel_path.split("/")
@@ -179,6 +180,9 @@ class IconsCheck(CheckBase):
                             logger.error("Icon resolution doesn't match resolution in path: %s (file resolution is %s)",
                                          path_res, actual_res)
 
+            if not other_icons_checks_success:
+                logger.warning("no other icons found")
+
             yield TestResult(other_icons_checks_success, "icons.valid_other_icons", "Other integration icons valid")
 
     @staticmethod
@@ -192,12 +196,19 @@ class IconsCheck(CheckBase):
             et = ET.parse(f)
             root: ET.Element = et.getroot()
 
-            height = root.attrib.get("height", None)
-            width = root.attrib.get("width", None)
+            height: str = root.attrib.get("height", None)
+            width: str = root.attrib.get("width", None)
 
             if not height or not width:
                 self.get_logger().error("Could not detect resolution of SVG icon: %s", icon_path)
                 return
+
+            def repl(s: str, to_remove: str):
+                return s.replace(to_remove, "")
+
+            # remove "px" suffixes, if available
+            height = repl(height, "px")
+            width = repl(width, "px")
 
             return float(height), float(width)
 
@@ -238,6 +249,10 @@ class IconsCheck(CheckBase):
                 resolution = self._get_svg_icon_res(icon_path)
             except ET.ParseError as e:
                 logger.debug("Failed to parse SVG file: %s".format(e))
+                return None
+
+            if resolution is None:
+                logger.warning("Note: SVG resolution detection is still incomplete")
                 return None
 
             # they need to be equivalent when rounded to integer only
