@@ -1,3 +1,4 @@
+import glob
 import gzip
 import os
 
@@ -96,9 +97,15 @@ def get_glibcxx_version_from_debian_package(url: str):
         logger.debug("Downloading {} to {}".format(url, deb_path))
 
         out_path = os.path.join(d, "out/")
+        os.makedirs(out_path, exist_ok=True)
 
         subprocess.check_call(["wget", "-q", url, "-O", deb_path], stdout=subprocess.DEVNULL)
-        subprocess.check_call(["dpkg", "-x", deb_path, out_path], stdout=subprocess.DEVNULL)
+
+        # cannot use dpkg, but extracting Debian packages is quite easy with ar and tar
+        subprocess.check_call(["ar", "x", deb_path], cwd=d, stdout=subprocess.DEVNULL)
+
+        data_archive_name = glob.glob(os.path.join(d, "data.tar.*"))[0]
+        subprocess.check_call(["tar", "-xf", data_archive_name], cwd=out_path, stdout=subprocess.DEVNULL)
 
         finder = GnuLibVersionSymbolsFinder(query_deps=True, query_reqs=False)
         return finder.check_all_executables("GLIBCXX_", out_path)
