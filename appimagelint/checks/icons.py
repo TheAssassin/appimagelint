@@ -272,16 +272,43 @@ class IconsCheck(CheckBase):
                 logger.exception("Failed to identify icon %s", icon_path, )
 
     def _check_icon_for_valid_resolution(self, icon_path: str) -> bool:
+        logger = self.get_logger()
+
+        logger.info("Checking resolution of icon: {}".format(icon_path))
+
         res = self._get_icon_res(icon_path)
 
         if not res:
+            logger.error("could not detect resolution in icon file {}".format(icon_path))
             return False
 
+        # skip all resolution based checks for SVG files
         if op.splitext(icon_path)[-1] == ".svg":
-            return res == "scalable"
+            rv = True
 
-        # .DirIcon exception
+            if res != "scalable":
+                logger.error("scalable icon filename does not end with .svg")
+                rv = False
+
+            return rv
+
+        # .DirIcon SVG extension exception
         if op.basename(icon_path) == ".DirIcon" and res == "scalable":
+            logger.debug("found scalable .DirIcon, does not have to carry .svg extension")
             return True
 
-        return res[0] == res[1] and res[0] in self._VALID_RESOLUTIONS and res[1] in self._VALID_RESOLUTIONS
+        rv = True
+
+        if not res[0] == res[1]:
+            logger.error("icon file is not square (i.e., X and Y resolutions differ)")
+            rv = False
+
+        if res[0] not in self._VALID_RESOLUTIONS:
+            logger.error("icon X resolution invalid: {}".format(res[0]))
+            rv = False
+
+        if res[1] not in self._VALID_RESOLUTIONS:
+            logger.error("icon Y resolution invalid: {}".format(res[0]))
+            rv = False
+
+        return rv
