@@ -3,13 +3,12 @@ import logging
 import os
 import sys
 
-from appimagelint.checks import IconsCheck
 from .cache.runtime_cache import AppImageRuntimeCache
 from .reports import JSONReport
 from .services.result_formatter import ResultFormatter
 from .models import AppImage
 from . import _logging
-from .checks import GlibcABICheck, GlibcxxABICheck
+from .checks import IconsCheck, GlibcABICheck, GlibcxxABICheck, DesktopFilesCheck
 
 
 def get_version():
@@ -121,7 +120,7 @@ def run():
 
             formatter = ResultFormatter(**kwargs)
 
-            for check_cls in [GlibcABICheck, GlibcxxABICheck, IconsCheck]:
+            for check_cls in [GlibcABICheck, GlibcxxABICheck, IconsCheck, DesktopFilesCheck]:
                 logger.info("Running check \"{}\"".format(check_cls.name()))
                 check = check_cls(appimage)
 

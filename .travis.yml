@@ -5,6 +5,11 @@ language: python
 python:
   - 3.6
 
+addons:
+  apt:
+    packages:
+      - desktop-file-utils
+
 script:
   - bash ci/build-appimage.sh
 
