@@ -45,11 +45,13 @@ export PIP_WORKDIR="$REPO_ROOT"
 export OUTPUT=appimagelint-x86_64.AppImage
 export VERSION="$SETUPPY_VERSION-git$COMMIT"
 
-mkdir -p AppDir/usr/share/metainfo/ && cp "$REPO_ROOT"/resources/appimagelint.appdata.xml AppDir/usr/share/metainfo/
+install -D "$REPO_ROOT"/resources/com.github.theassassin.appimagelint.appdata.xml -t AppDir/usr/share/metainfo/
 
 ./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin conda \
     -e $(which readelf) \
-    -i "$REPO_ROOT"/resources/appimagelint.svg -d "$REPO_ROOT"/resources/appimagelint.desktop \
+    -e $(which desktop-file-validate) \
+    -i "$REPO_ROOT"/resources/com.github.theassassin.appimagelint.svg \
+    -d "$REPO_ROOT"/resources/com.github.theassassin.appimagelint.desktop \
     --output appimage --custom-apprun "$REPO_ROOT"/resources/AppRun.sh
 
 # test AppImage with itself

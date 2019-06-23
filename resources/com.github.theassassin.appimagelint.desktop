@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=appimagelint
 Exec=appimagelint
-Icon=appimagelint
+Icon=com.github.theassassin.appimagelint
 Type=Application
 Terminal=true
 Categories=Utility;
