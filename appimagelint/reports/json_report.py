@@ -38,3 +38,4 @@ class JSONReport(ReportBase):
         logger.info("Writing JSON report to {}".format(path))
         with open(path, "w") as f:
             json.dump(self._make_json(), f, indent=4)
+            f.write("\n")
