@@ -13,7 +13,7 @@ from . import CheckBase
 
 
 class IconsCheck(CheckBase):
-    _VALID_RESOLUTIONS = (8, 16, 32, 48, 56, 64, 128, 192, 256, 384, 512)
+    _KNOWN_RESOLUTIONS = (8, 16, 32, 48, 56, 64, 128, 192, 256, 384, 512)
 
     def __init__(self, appimage: AppImage):
         super().__init__(appimage)
@@ -303,12 +303,12 @@ class IconsCheck(CheckBase):
             logger.error("icon file is not square (i.e., X and Y resolutions differ)")
             rv = False
 
-        if res[0] not in self._VALID_RESOLUTIONS:
-            logger.error("icon X resolution invalid: {}".format(res[0]))
-            rv = False
+        known_res_msg_tpl = "icon {} resolution {} is unknown, icon will most likely not be used and just wastes space"
 
-        if res[1] not in self._VALID_RESOLUTIONS:
-            logger.error("icon Y resolution invalid: {}".format(res[0]))
-            rv = False
+        if res[0] not in self._KNOWN_RESOLUTIONS:
+            logger.warning(known_res_msg_tpl.format("X", res[0]))
+
+        if res[1] not in self._KNOWN_RESOLUTIONS:
+            logger.warning(known_res_msg_tpl.format("Y", res[1]))
 
         return rv
