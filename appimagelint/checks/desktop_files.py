@@ -2,7 +2,6 @@ import shutil
 import subprocess
 from pathlib import Path
 
-from appimagelint._logging import make_logger
 from appimagelint.models import TestResult
 from ..models import AppImage
 from . import CheckBase
@@ -15,6 +14,10 @@ class DesktopFilesCheck(CheckBase):
     @staticmethod
     def name():
         return "Desktop files existence and validity"
+
+    @staticmethod
+    def id():
+        return "desktop_files"
 
     def run(self):
         logger = self.get_logger()
@@ -51,7 +54,3 @@ class DesktopFilesCheck(CheckBase):
                     validation_results[desktop_file] = success
 
                 yield TestResult(all(validation_results.values()), "desktop_files_check.all_desktop_files_valid", "All desktop files in AppDir are valid")
-
-    @staticmethod
-    def get_logger():
-        return make_logger("icon_check")

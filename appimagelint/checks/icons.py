@@ -22,6 +22,10 @@ class IconsCheck(CheckBase):
     def name():
         return "Icons validity and location check"
 
+    @staticmethod
+    def id():
+        return "icons_check"
+
     def run(self):
         logger = self.get_logger()
 
@@ -184,10 +188,6 @@ class IconsCheck(CheckBase):
                 logger.warning("no other icons found")
 
             yield TestResult(other_icons_checks_success, "icons.valid_other_icons", "Other integration icons valid")
-
-    @staticmethod
-    def get_logger():
-        return make_logger("icon_check")
 
     def _get_svg_icon_res(self, icon_path: str) -> Union[Tuple[float, float], None]:
         with open(icon_path) as f:

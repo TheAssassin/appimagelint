@@ -15,6 +15,7 @@ class JSONReport(ReportBase):
                 path: [
                     {
                         "name": check.name(),
+                        "id": check.id(),
                         "results": [
                             {
                                 "id": res.id(),

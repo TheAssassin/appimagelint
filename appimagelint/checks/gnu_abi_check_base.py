@@ -20,12 +20,12 @@ class GnuAbiCheckBase(CheckBase):
         super().__init__(appimage)
 
     @classmethod
-    def get_logger(cls) -> logging.Logger:
-        return make_logger("{}_abi_check".format(cls._library_id()))
-    
+    def id(cls):
+        return "{}_abi_check".format(cls._library_id())
+
     @classmethod
     def _test_result_id_prefix(cls):
-        return "{}_abi_check".format(cls._library_id())
+        return cls.id()
 
     @staticmethod
     def name():

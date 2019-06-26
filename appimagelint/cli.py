@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 
+from appimagelint.services.checks_manager import ChecksManager
 from .cache.runtime_cache import AppImageRuntimeCache
 from .reports import JSONReport
 from .services.result_formatter import ResultFormatter
@@ -81,6 +82,8 @@ def parse_args():
 
 
 def run():
+    ChecksManager.init()
+
     args = parse_args()
 
     if getattr(args, "display_version", False):
@@ -120,9 +123,10 @@ def run():
 
             formatter = ResultFormatter(**kwargs)
 
-            for check_cls in [GlibcABICheck, GlibcxxABICheck, IconsCheck, DesktopFilesCheck]:
-                logger.info("Running check \"{}\"".format(check_cls.name()))
-                check = check_cls(appimage)
+            for check_id in ChecksManager.list_checks():
+                check = ChecksManager.get_instance(check_id, appimage)
+
+                logger.info("Running check \"{}\"".format(check.name()))
 
                 results[path][check] = []
 
