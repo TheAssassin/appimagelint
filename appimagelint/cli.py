@@ -72,6 +72,10 @@ def parse_args():
                         dest="json_report", nargs="?", default=None,
                         help="Write results to file in machine-readable form (JSON)")
 
+    parser.add_argument("--check",
+                        dest="check_id", nargs="?", default=None,
+                        help="Check to run (default: all)")
+
     parser.add_argument("path",
                         nargs="+",
                         help="AppImage to review")
@@ -123,7 +127,12 @@ def run():
 
             formatter = ResultFormatter(**kwargs)
 
-            for check_id in ChecksManager.list_checks():
+            if args.check_id:
+                checks_ids = [args.check_id]
+            else:
+                checks_ids = ChecksManager.list_checks()
+
+            for check_id in checks_ids:
                 check = ChecksManager.get_instance(check_id, appimage)
 
                 logger.info("Running check \"{}\"".format(check.name()))
