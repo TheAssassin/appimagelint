@@ -42,12 +42,15 @@ class AppImageRuntimeCache(CacheBase):
         logger = _get_logger()
         path = cls._cached_runtime_path()
 
+        # this is somewhat pessimistic; but hey, you're free prove me wrong below!
         update_needed = False
+        runtime_file_found = False
 
         if not os.path.exists(path):
             logger.debug("AppImage runtime file not found")
             update_needed = True
         else:
+            runtime_file_found = True
             mtime = os.path.getmtime(cls._cached_runtime_path())
             if mtime + cache_timeout() < time.time():
                 logger.debug("AppImage runtime older than cache timeout")
@@ -57,9 +60,9 @@ class AppImageRuntimeCache(CacheBase):
             try:
                 logger.debug("updating AppImage runtime")
                 cls.force_update()
-            except Exception:
-                # can be handled gracefully by the user, if required
-                if raise_on_error:
+            except:
+                # can be handled gracefully by the user, if required, unless there's no fallback
+                if not runtime_file_found or raise_on_error:
                     raise
                 else:
                     logger.warning("AppImage runtime needs update, but update failed, skipping")
