@@ -19,6 +19,8 @@ def store_json(path: str, data: Union[Mapping, Iterable]):
         "data": data,
     }
 
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+
     with open(path, "w") as f:
         json.dump(json_root, f, indent=2)
 
