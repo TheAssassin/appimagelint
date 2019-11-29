@@ -2,20 +2,30 @@ import os
 import subprocess
 import time
 
-from appimagelint.cache import OutOfDateError, _get_logger
+from appimagelint.cache import _get_cache_logger
 from .io import cache_timeout
-from .paths import data_cache_path
 from . import CacheBase
 
 
 class AppImageRuntimeCache(CacheBase):
     @classmethod
-    def _cached_runtime_path(cls):
-        return os.path.join(data_cache_path(), "runtime")
+    def _cache_file_name(cls) -> str:
+        return "runtime"
 
     @classmethod
-    def force_update(cls):
-        path = cls._cached_runtime_path()
+    def _cached_runtime_path(cls, save_to_bundled_cache: bool = False):
+        if save_to_bundled_cache:
+            cache_dir = cls._bundled_cache_base_path()
+        else:
+            cache_dir = cls._user_cache_base_path()
+
+        return os.path.join(cache_dir, cls._cache_file_name())
+
+    @classmethod
+    def update_now(cls, save_to_bundled_cache: bool = False):
+        path = cls._cached_runtime_path(save_to_bundled_cache=save_to_bundled_cache)
+
+        os.makedirs(os.path.dirname(path), exist_ok=True)
 
         try:
             subprocess.check_call([
@@ -36,35 +46,51 @@ class AppImageRuntimeCache(CacheBase):
 
             raise
 
-
     @classmethod
     def get_data(cls, raise_on_error=False) -> str:
-        logger = _get_logger()
-        path = cls._cached_runtime_path()
+        logger = _get_cache_logger()
+
+        runtime_path = None
 
         # this is somewhat pessimistic; but hey, you're free prove me wrong below!
         update_needed = False
-        runtime_file_found = False
 
-        if not os.path.exists(path):
+        for path, is_fallback in cls._find_cache_files():
+            if os.path.exists(path):
+                # just a fancy debug message, we don't necessarily have to update, the file might be recent enough
+                if is_fallback:
+                    logger.debug("Found runtime in fallback cache")
+
+                mtime = os.path.getmtime(path)
+
+                if mtime + cache_timeout() < time.time():
+                    logger.debug("Cached AppImage runtime older than cache timeout")
+                    update_needed = True
+
+                runtime_path = path
+                break
+
+        else:
             logger.debug("AppImage runtime file not found")
             update_needed = True
-        else:
-            runtime_file_found = True
-            mtime = os.path.getmtime(cls._cached_runtime_path())
-            if mtime + cache_timeout() < time.time():
-                logger.debug("AppImage runtime older than cache timeout")
-                update_needed = True
 
         if update_needed:
             try:
                 logger.debug("updating AppImage runtime")
-                cls.force_update()
+                cls.update_now(save_to_bundled_cache=False)
+
             except:
                 # can be handled gracefully by the user, if required, unless there's no fallback
-                if not runtime_file_found or raise_on_error:
+                if runtime_path is None or raise_on_error:
+                    if runtime_path is None:
+                        logger.error("runtime not found locally and failed to download and cache runtime")
+
                     raise
+
                 else:
                     logger.warning("AppImage runtime needs update, but update failed, skipping")
 
-        return path
+            else:
+                runtime_path = cls._cached_runtime_path(save_to_bundled_cache=False)
+
+        return runtime_path
