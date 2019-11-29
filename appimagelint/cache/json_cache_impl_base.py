@@ -1,10 +1,12 @@
 import os
 from typing import Iterable, Mapping, Union
 
+import xdg
+
 from . import load_json, OutOfDateError, _get_logger, store_json, CacheBase
 
 
-class JSONCacheImplBase(CacheBase):
+class JSONFileCacheBase(CacheBase):
     """
     Template method kind of class that requires very little configuration by actual instances and implements most
     functionality already, based on primitives.
@@ -13,14 +15,6 @@ class JSONCacheImplBase(CacheBase):
     @classmethod
     def _get_logger(cls):
         return _get_logger()
-
-    @classmethod
-    def _cache_file_path(cls):
-        """
-        Get cache file path. Must be overridden by subclasses.
-        :return: cache file's path
-        """
-        raise NotImplementedError
 
     @classmethod
     def _fetch_data(cls):
@@ -32,21 +26,38 @@ class JSONCacheImplBase(CacheBase):
 
     @classmethod
     def _load(cls):
-        return load_json(cls._cache_file_path())
+        cache_files = list(cls._find_cache_files())
+
+        for i, path in enumerate(cache_files):
+            try:
+                return load_json(path)
+            except FileNotFoundError:
+                pass
+        else:
+            raise OutOfDateError("cache file missing, update required")
 
     @classmethod
-    def _store(cls, data):
-        store_json(cls._cache_file_path(), data)
+    def _store(cls, data, path: str):
+        store_json(path, data)
 
     @classmethod
-    def force_update(cls):
+    def update_now(cls, save_to_bundled_cache: bool = False):
         """
         Force cache update.
         :return:
         """
 
+        if save_to_bundled_cache:
+            cache_dir = cls._bundled_cache_base_path()
+        else:
+            cache_dir = cls._user_cache_base_path()
+
+        os.makedirs(cache_dir, exist_ok=True)
+
+        path = os.path.join(cache_dir, cls._cache_file_name())
+
         data = cls._fetch_data()
-        cls._store(data)
+        cls._store(data, path)
 
     @classmethod
     def get_data(cls, raise_on_error=False) -> Union[Mapping, Iterable]:
@@ -74,7 +85,7 @@ class JSONCacheImplBase(CacheBase):
             if e.cached_data is not None:
                 cached_data = e.cached_data
         else:
-            logger.debug("{} still up to date, no update required".format(os.path.basename(cls._cache_file_path())))
+            logger.debug("Cache still up to date, no update required")
             return cached_data
 
         logger.debug("data out of date, updating")
@@ -92,5 +103,8 @@ class JSONCacheImplBase(CacheBase):
 
             raise
 
-        cls._store(new_data)
+        # store updated data in user cache
+        user_cache_file_path = os.path.join(cls._user_cache_base_path(), cls._cache_file_name())
+        cls._store(new_data, user_cache_file_path)
+
         return new_data

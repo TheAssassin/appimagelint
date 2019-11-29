@@ -2,14 +2,13 @@ import os
 
 import requests
 
-from . import JSONCacheImplBase
-from .paths import debian_codename_map_path
+from . import JSONFileCacheBase
 
 
-class DebianCodenameMapCache(JSONCacheImplBase):
+class DebianCodenameMapCache(JSONFileCacheBase):
     @classmethod
-    def _cache_file_path(cls):
-        return debian_codename_map_path()
+    def _cache_file_name(cls) -> str:
+        return "debian_codenames.json"
 
     @classmethod
     def _fetch_data(cls):

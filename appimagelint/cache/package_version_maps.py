@@ -1,17 +1,15 @@
 from typing import Callable, Union, Mapping, Iterable
 
-from . import CacheBase, JSONCacheImplBase
+from . import CacheBase, JSONFileCacheBase
 from .common import get_debian_package_versions_map, get_debian_glibcxx_versions_map, get_ubuntu_glibcxx_versions_map, \
     get_ubuntu_package_versions_map
-from .paths import ubuntu_glibcxx_versions_data_path, debian_glibcxx_versions_data_path, \
-    debian_glibc_versions_data_path, ubuntu_glibc_versions_data_path
 
 
-def _make_cache_class(distro: str, package: str, get_map_callback: Callable, file_path: str):
-    class _PackageVersionMap(JSONCacheImplBase):
+def _make_cache_class(distro: str, package: str, get_map_callback: Callable, cache_file_name: str):
+    class _PackageVersionMap(JSONFileCacheBase):
         @classmethod
-        def _cache_file_path(cls):
-            return file_path
+        def _cache_file_name(cls) -> str:
+            return cache_file_name
 
         @classmethod
         def _fetch_data(cls):
@@ -22,16 +20,16 @@ def _make_cache_class(distro: str, package: str, get_map_callback: Callable, fil
 
 
 DebianGlibcVersionsCache = _make_cache_class(
-    "debian", "glibc", lambda: get_debian_package_versions_map("glibc"), debian_glibc_versions_data_path()
+    "debian", "glibc", lambda: get_debian_package_versions_map("glibc"), "debian_glibc_versions.json"
 )
 DebianGlibcxxVersionsCache = _make_cache_class(
-    "debian", "glibcxx", get_debian_glibcxx_versions_map, debian_glibcxx_versions_data_path()
+    "debian", "glibcxx", get_debian_glibcxx_versions_map, "debian_glibcxx_versions.json"
 )
 UbuntuGlibcVersionsCache = _make_cache_class(
-    "ubuntu", "glibc", lambda: get_ubuntu_package_versions_map("glibc"), ubuntu_glibc_versions_data_path()
+    "ubuntu", "glibc", lambda: get_ubuntu_package_versions_map("glibc"), "ubuntu_glibc_versions.json"
 )
 UbuntuGlibcxxVersionsCache = _make_cache_class(
-    "ubuntu", "glibcxx", get_ubuntu_glibcxx_versions_map, ubuntu_glibcxx_versions_data_path()
+    "ubuntu", "glibcxx", get_ubuntu_glibcxx_versions_map, "ubuntu_glibcxx_versions.json"
 )
 
 
@@ -47,9 +45,9 @@ class PackageVersionMapsCache(CacheBase):
     ]
 
     @classmethod
-    def force_update(cls):
+    def update_now(cls, save_to_bundled_cache: bool = False):
         for c in cls._classes:
-            c.force_update()
+            c.update_now(save_to_bundled_cache=save_to_bundled_cache)
 
     @classmethod
     def get_data(cls, raise_on_error=False) -> Union[Mapping, Iterable]:

@@ -3,11 +3,11 @@ import os
 import time
 from typing import Union, Iterable, Mapping
 
-from . import OutOfDateError, _get_logger
+from . import OutOfDateError
 from .codebase_hasher import CodebaseHasher
 
 
-# use a method to simulate "const values"
+# use a function to simulate "const values"
 def cache_timeout():
     # update caches every week
     return 7 * 24 * 60 * 60
@@ -24,11 +24,8 @@ def store_json(path: str, data: Union[Mapping, Iterable]):
 
 
 def load_json(path):
-    try:
-        with open(path, "r") as f:
-            json_root = json.load(f)
-    except FileNotFoundError as e:
-        raise OutOfDateError("cache file missing, update required") from e
+    with open(path, "r") as f:
+        json_root = json.load(f)
 
     cached_codebase_digest = json_root["codebase_digest"]
     data = json_root["data"]
