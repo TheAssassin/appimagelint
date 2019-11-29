@@ -22,9 +22,8 @@ class BundleMetadataCommand(Command):
 
         logging.getLogger("urllib3").setLevel(logging.INFO)
 
-        from appimagelint.cache import DebianCodenameMapCache, PackageVersionMapsCache, AppImageRuntimeCache
-        for cache in DebianCodenameMapCache, PackageVersionMapsCache, AppImageRuntimeCache:
-            cache.update_now(save_to_bundled_cache=True)
+        from appimagelint.cache.cli import bundle_metadata
+        bundle_metadata()
 
 
 setup(
