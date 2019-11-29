@@ -1,5 +1,5 @@
 import os
-from typing import Iterable
+from typing import Iterable, Tuple
 
 import xdg
 
@@ -28,11 +28,21 @@ class CacheBase:
         raise NotImplementedError
 
     @classmethod
-    def _find_cache_files(cls) -> Iterable[str]:
-        for dir in (cls._user_cache_base_path(), cls._bundled_cache_base_path()):
+    def _find_cache_files(cls) -> Iterable[Tuple[str, bool]]:
+        """
+        This method returns paths to the cache file in every potential cache, primary (in user home) as well as
+        fallback (e.g., cache bundled with appimagelint).
+
+        :return: iterator yielding a 2-tuple containing the file path and whether it's in a fallback location
+        """
+
+        for dir, is_fallback in (
+                (cls._user_cache_base_path(), False),
+                (cls._bundled_cache_base_path(), True)
+        ):
             file_path = os.path.join(dir, cls._cache_file_name())
             if os.path.exists(file_path):
-                yield file_path
+                yield file_path, is_fallback
 
     @classmethod
     def update_now(cls, save_to_bundled_cache: bool = False):

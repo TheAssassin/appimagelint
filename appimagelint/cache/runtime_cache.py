@@ -57,12 +57,16 @@ class AppImageRuntimeCache(CacheBase):
         # this is somewhat pessimistic; but hey, you're free prove me wrong below!
         update_needed = False
 
-        for path in cls._find_cache_files():
+        for path, is_fallback in cls._find_cache_files():
             if os.path.exists(path):
+                # just a fancy debug message, we don't necessarily have to update, the file might be recent enough
+                if is_fallback:
+                    logger.debug("Found runtime in fallback cache")
+
                 mtime = os.path.getmtime(path)
 
                 if mtime + cache_timeout() < time.time():
-                    logger.debug("AppImage runtime older than cache timeout")
+                    logger.debug("Cached AppImage runtime older than cache timeout")
                     update_needed = True
 
                 runtime_path = path

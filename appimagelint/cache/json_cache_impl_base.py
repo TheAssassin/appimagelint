@@ -28,9 +28,9 @@ class JSONFileCacheBase(CacheBase):
     def _load(cls):
         cache_files = list(cls._find_cache_files())
 
-        for path in cache_files:
+        for path, is_fallback in cache_files:
             try:
-                return load_json(path)
+                return load_json(path), is_fallback
             except FileNotFoundError:
                 pass
         else:
@@ -77,15 +77,22 @@ class JSONFileCacheBase(CacheBase):
         cached_data = None
 
         try:
-            cached_data = cls._load()
+            cached_data, is_fallback = cls._load()
+
         except OutOfDateError as e:
             logger.debug("OutOfDateError: {}".format(" ".join(e.args)))
 
             # store cached data for use in next block (if possible, i.e., it's valid data)
             if e.cached_data is not None:
                 cached_data = e.cached_data
+
         else:
+            # just a fancy debug message, we don't necessarily have to update, the file might be recent enough
+            if is_fallback:
+                cls._get_logger().debug("found cached data in fallback location")
+
             logger.debug("Cache still up to date, no update required")
+
             return cached_data
 
         logger.debug("data out of date, updating")
