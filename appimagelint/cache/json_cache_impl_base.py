@@ -28,7 +28,7 @@ class JSONFileCacheBase(CacheBase):
     def _load(cls):
         cache_files = list(cls._find_cache_files())
 
-        for i, path in enumerate(cache_files):
+        for path in cache_files:
             try:
                 return load_json(path)
             except FileNotFoundError:
