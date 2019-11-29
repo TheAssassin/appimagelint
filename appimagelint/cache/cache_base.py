@@ -37,8 +37,8 @@ class CacheBase:
         """
 
         for dir, is_fallback in (
-                (cls._user_cache_base_path(), False),
-                (cls._bundled_cache_base_path(), True)
+            (cls._user_cache_base_path(), False),
+            (cls._bundled_cache_base_path(), True)
         ):
             file_path = os.path.join(dir, cls._cache_file_name())
             if os.path.exists(file_path):
