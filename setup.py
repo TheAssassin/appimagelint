@@ -48,9 +48,4 @@ setup(
             "appimagelint = appimagelint.cli:run",
         ],
     },
-    package_data={
-        "appimagecraft": [
-            "cached_metadata/*"
-        ]
-    },
 )
