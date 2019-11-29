@@ -24,7 +24,6 @@ class AppImageRuntimeCache(CacheBase):
     @classmethod
     def update_now(cls, save_to_bundled_cache: bool = False):
         path = cls._cached_runtime_path(save_to_bundled_cache=save_to_bundled_cache)
-        print(path)
 
         os.makedirs(os.path.dirname(path), exist_ok=True)
 
@@ -46,7 +45,6 @@ class AppImageRuntimeCache(CacheBase):
                 os.remove(path)
 
             raise
-
 
     @classmethod
     def get_data(cls, raise_on_error=False) -> str:
@@ -75,8 +73,6 @@ class AppImageRuntimeCache(CacheBase):
         else:
             logger.debug("AppImage runtime file not found")
             update_needed = True
-
-        print(runtime_path)
 
         if update_needed:
             try:
