@@ -3,7 +3,7 @@ from typing import Iterable, Mapping, Union
 
 import xdg
 
-from . import load_json, OutOfDateError, _get_logger, store_json, CacheBase
+from . import load_json, OutOfDateError, _get_cache_logger, store_json, CacheBase
 
 
 class JSONFileCacheBase(CacheBase):
@@ -14,7 +14,7 @@ class JSONFileCacheBase(CacheBase):
 
     @classmethod
     def _get_logger(cls):
-        return _get_logger()
+        return _get_cache_logger()
 
     @classmethod
     def _fetch_data(cls):

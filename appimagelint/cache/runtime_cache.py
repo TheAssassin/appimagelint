@@ -2,7 +2,7 @@ import os
 import subprocess
 import time
 
-from appimagelint.cache import _get_logger
+from appimagelint.cache import _get_cache_logger
 from .io import cache_timeout
 from . import CacheBase
 
@@ -50,7 +50,7 @@ class AppImageRuntimeCache(CacheBase):
 
     @classmethod
     def get_data(cls, raise_on_error=False) -> str:
-        logger = _get_logger()
+        logger = _get_cache_logger()
 
         runtime_path = None
 

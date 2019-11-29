@@ -1,7 +1,7 @@
 from .._logging import make_logger
 
 
-def _get_logger():
+def _get_cache_logger():
     return make_logger("cache")
 
 
