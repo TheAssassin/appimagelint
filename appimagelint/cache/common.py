@@ -42,7 +42,7 @@ def get_debian_package_versions_map(package_name: str):
 
 
 def get_ubuntu_releases():
-    releases = ("trusty", "xenial", "bionic", "cosmic", "disco")
+    releases = ("trusty", "xenial", "bionic", "eoan", "fossa")
     return releases
 
 
