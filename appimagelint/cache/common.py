@@ -42,8 +42,21 @@ def get_debian_package_versions_map(package_name: str):
 
 
 def get_ubuntu_releases():
-    releases = ("trusty", "xenial", "bionic", "eoan", "fossa")
-    return releases
+    """
+    Fetches Ubuntu release codenames from Launchpad's series API endpoint.
+
+    Ubuntu doesn't have any "stable" (as in, they don't change) aliases for their currently supported releases.
+
+    :return: names of currently supported Ubuntu releases
+    """
+
+    response = requests.get("https://api.launchpad.net/devel/ubuntu/series")
+    response.raise_for_status()
+
+    data = response.json()
+    releases = [release["displayname"].lower() for release in data if release["supported"]]
+
+    return tuple(releases)
 
 
 def get_debian_releases():
