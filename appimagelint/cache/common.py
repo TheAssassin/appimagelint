@@ -5,7 +5,7 @@ import os
 import requests
 import subprocess
 
-from . import DebianCodenameMapCache
+from . import DebianCodenameMapCache, UbuntuReleaseNamesCache
 from ..services import GnuLibVersionSymbolsFinder
 from .._logging import make_logger
 from .._util import make_tempdir, max_version
@@ -50,11 +50,7 @@ def get_ubuntu_releases():
     :return: names of currently supported Ubuntu releases
     """
 
-    response = requests.get("https://api.launchpad.net/devel/ubuntu/series")
-    response.raise_for_status()
-
-    data = response.json()
-    releases = [release["displayname"].lower() for release in data if release["supported"]]
+    releases = UbuntuReleaseNamesCache.get_data()
 
     return tuple(releases)
 
