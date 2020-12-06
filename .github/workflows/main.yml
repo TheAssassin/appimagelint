@@ -1,0 +1,69 @@
+name: Build and deploy AppImage
+
+on: [push, pull_request]
+
+env:
+  APPIMAGE_EXTRACT_AND_RUN: 1
+  TERM: xterm-256color
+
+jobs:
+  appimage-x86_64:
+    name: Build AppImage for x86_64
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          sudo apt-get install -y desktop-file-utils
+      - name: Build AppImage
+        run: |
+          export ARCH=x86_64
+          bash -xe ci/build-appimage.sh
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: AppImage x86_64
+          path: appimagelint*.AppImage*
+
+  appimage-i386:
+    name: Build AppImage for i386 (cross)
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install -y desktop-file-utils \
+              libc6:i386 libstdc++6:i386 libffi6:i386 libgmp10:i386 zlib1g:i386 libfuse2:i386
+      - name: Build AppImage
+        run: |
+          export ARCH=i386
+          bash -xe ci/build-appimage.sh
+      - name: Archive artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: AppImage i386
+          path: appimagelint*.AppImage*
+
+  upload:
+    name: Create release and upload artifacts
+    runs-on: ubuntu-18.04
+    needs:
+      - appimage-x86_64
+      - appimage-i386
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v2
+      - name: Inspect directory after downloading artifacts
+        run: ls -alFR
+      - name: Create release and upload artifacts
+        uses: marvinpinto/action-automatic-releases@latest
+        if: ${{ github.ref == 'refs/heads/master' }}
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "continuous"
+          prerelease: true
+          title: "Continuous build"
+          files: |
+            **/appimagelint*.AppImage*
