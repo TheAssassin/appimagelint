@@ -61,7 +61,7 @@ AppDir/usr/conda/bin/python3 -m appimagelint.cache bundle_metadata
 ./linuxdeploy-x86_64.AppImage --appdir AppDir --output appimage
 
 # test AppImage with itself
-./appimagelint-x86_64.AppImage appimagelint-x86_64.AppImage --json-report appimagelint-report.json
+./appimagelint-x86_64.AppImage --debug appimagelint-x86_64.AppImage --json-report appimagelint-report.json
 cat appimagelint-report.json
 
 mv appimagelint*.AppImage "$OLD_CWD"
