@@ -35,7 +35,7 @@ def get_version():
     return version
 
 
-def parse_args():
+def parse_args(args=None):
     parser = argparse.ArgumentParser(
         prog="appimagelint",
         description="Run compatibility and other checks on AppImages automatically, "
@@ -80,15 +80,15 @@ def parse_args():
                         nargs="+",
                         help="AppImage to review")
 
-    args = parser.parse_args()
+    parsed_args = parser.parse_args(args)
 
-    return args
+    return parsed_args
 
 
-def run():
+def run(args=None):
     ChecksManager.init()
 
-    args = parse_args()
+    args = parse_args(args)
 
     if getattr(args, "display_version", False):
         print(get_version())
