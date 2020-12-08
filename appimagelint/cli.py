@@ -3,7 +3,7 @@ import logging
 import os
 import sys
 
-from appimagelint.services.checks_manager import ChecksManager
+from .services.checks_manager import ChecksManager
 from .cache.runtime_cache import AppImageRuntimeCache
 from .reports import JSONReport
 from .services.result_formatter import ResultFormatter
@@ -15,7 +15,7 @@ from .checks import IconsCheck, GlibcABICheck, GlibcxxABICheck, DesktopFilesChec
 def get_version():
     try:
         import pkg_resources
-        version = pkg_resources.require("appimagelint")[0].version
+        version = '0.0.1'
     except ImportError:
         version = "unknown"
 
