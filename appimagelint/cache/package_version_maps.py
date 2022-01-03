@@ -2,7 +2,7 @@ from typing import Callable, Union, Mapping, Iterable
 
 from . import CacheBase, JSONFileCacheBase
 from .common import get_debian_package_versions_map, get_debian_glibcxx_versions_map, get_ubuntu_glibcxx_versions_map, \
-    get_ubuntu_package_versions_map
+    get_ubuntu_package_versions_map, get_centos_glibc_versions_map, get_centos_glibcxx_versions_map
 
 
 def _make_cache_class(distro: str, package: str, get_map_callback: Callable, cache_file_name: str):
@@ -31,6 +31,12 @@ UbuntuGlibcVersionsCache = _make_cache_class(
 UbuntuGlibcxxVersionsCache = _make_cache_class(
     "ubuntu", "glibcxx", get_ubuntu_glibcxx_versions_map, "ubuntu_glibcxx_versions.json"
 )
+CentosGlibcVersionsCache = _make_cache_class(
+    "centos", "glibc", get_centos_glibc_versions_map, "centos_glibc_versions.json"
+)
+CentosGlibcxxVersionsCache = _make_cache_class(
+    "centos", "glibcxx", get_centos_glibcxx_versions_map, "centos_glibcxx_versions.json"
+)
 
 
 # "aggregator" for the other caches
@@ -41,7 +47,9 @@ class PackageVersionMapsCache(CacheBase):
         DebianGlibcVersionsCache,
         DebianGlibcxxVersionsCache,
         UbuntuGlibcVersionsCache,
-        UbuntuGlibcxxVersionsCache
+        UbuntuGlibcxxVersionsCache,
+        CentosGlibcVersionsCache,
+        CentosGlibcxxVersionsCache
     ]
 
     @classmethod

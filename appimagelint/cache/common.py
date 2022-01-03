@@ -1,6 +1,9 @@
 import glob
 import gzip
 import os
+import re
+
+from xml.etree import ElementTree as ET
 
 import requests
 import subprocess
@@ -55,6 +58,17 @@ def get_ubuntu_releases():
     return tuple(releases)
 
 
+def get_centos_releases():
+    """
+    For now, only the still-supported old-style LTS CentOS 7 is supported.
+    """
+
+    # make sure to return only strings, the caching logic expects that
+    releases = ["7"]
+
+    return tuple(releases)
+
+
 def get_debian_releases():
     releases = ("oldstable", "stable", "testing", "unstable",)
     return releases
@@ -93,6 +107,68 @@ def get_ubuntu_package_versions_map(package_name: str):
         version = data[pkg_ver_off:pkg_ver_off+512].splitlines()[0].split("Version: ")[-1]
         parsed_version = ".".join(version.split(".")[:3]).split("-")[0]
         versions_map[release] = parsed_version
+
+    return versions_map
+
+
+def get_centos_repodata_primary_xml(version: int):
+    base_url = f"https://ftp.fau.de/centos/{version}/os/x86_64/repodata/"
+
+    def get_request(url):
+        response = requests.get(url)
+        response.raise_for_status()
+        return response
+
+    namespaces = {
+        "repo": "http://linux.duke.edu/metadata/repo"
+    }
+
+    repomd_xml_root = ET.fromstring(get_request(f"{base_url}/repomd.xml").content)
+    data_elem = repomd_xml_root.find("repo:data[@type='primary']", namespaces)
+    if not data_elem:
+        raise KeyError("could not find primary data reference in repomd.xml")
+
+    relative_href = data_elem.find("repo:location", namespaces).attrib["href"].split("/")[-1]
+    primary_url = f"{base_url}/{relative_href}"
+
+    return gzip.decompress(get_request(primary_url).content)
+
+
+def get_centos_package_versions_map(package_name: str, pattern: str):
+    logger = _get_logger()
+
+    logger.info(f"Fetching {package_name} package versions from CentOS mirror")
+
+    namespaces = {
+        "common": "http://linux.duke.edu/metadata/common",
+        "rpm": "http://linux.duke.edu/metadata/rpm",
+    }
+
+    versions_map = {}
+
+    releases = get_centos_releases()
+    for release in releases:
+        primary_xml_root = ET.fromstring(get_centos_repodata_primary_xml(release))
+
+        package_elem: ET.Element
+        for package_elem in primary_xml_root.findall("common:package", namespaces):
+            name = package_elem.find("common:name", namespaces).text
+
+            if name == package_name:
+                version_markers = []
+
+                for rpm_entry in package_elem.findall("common:format/rpm:provides/rpm:entry", namespaces):
+                    entry_name = rpm_entry.attrib["name"]
+
+                    match = re.match(pattern, entry_name)
+                    if match:
+                        version_markers.append(match.group(1))
+
+                versions_map[release] = max_version(version_markers)
+                break
+
+        else:
+            raise KeyError("could not find primary data reference in primary xml")
 
     return versions_map
 
@@ -164,3 +240,11 @@ def get_ubuntu_glibcxx_versions_map():
         rv[release] = max_version(versions)
 
     return rv
+
+
+def get_centos_glibc_versions_map():
+    return get_centos_package_versions_map("glibc", r"libc\.so\.6\(GLIBC_(.*)\)")
+
+
+def get_centos_glibcxx_versions_map():
+    return get_centos_package_versions_map("libstdc++", r"libstdc\+\+\.so\.6\(GLIBCXX_(.*)\)")

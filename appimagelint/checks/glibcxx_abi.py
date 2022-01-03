@@ -1,7 +1,7 @@
 from . import GnuAbiCheckBase
-from ..cache.package_version_maps import DebianGlibcxxVersionsCache, UbuntuGlibcxxVersionsCache
+from ..cache.package_version_maps import DebianGlibcxxVersionsCache, UbuntuGlibcxxVersionsCache, \
+    CentosGlibcxxVersionsCache
 from ..models import AppImage
-from ..services import GnuLibVersionSymbolsFinder
 
 
 class GlibcxxABICheck(GnuAbiCheckBase):
@@ -27,3 +27,7 @@ class GlibcxxABICheck(GnuAbiCheckBase):
     @classmethod
     def _get_ubuntu_versions_map(cls):
         return UbuntuGlibcxxVersionsCache.get_data()
+
+    @classmethod
+    def _get_centos_versions_map(cls):
+        return CentosGlibcxxVersionsCache.get_data()

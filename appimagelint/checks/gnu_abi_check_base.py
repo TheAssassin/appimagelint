@@ -5,7 +5,7 @@ from typing import Iterator
 from .._logging import make_logger
 from ..services import GnuLibVersionSymbolsFinder
 from ..cache import DebianCodenameMapCache
-from ..cache.common import get_debian_releases, get_ubuntu_releases
+from ..cache.common import get_debian_releases, get_ubuntu_releases, get_centos_releases
 from ..models import TestResult
 from ..services import BinaryWalker
 from ..models import AppImage
@@ -79,6 +79,9 @@ class GnuAbiCheckBase(CheckBase):
         for result in self._check_ubuntu_compat(required_version):
             yield result
 
+        for result in self._check_centos_compat(required_version):
+            yield result
+
     @classmethod
     def _get_debian_codename_map(cls):
         return DebianCodenameMapCache.get_data()
@@ -89,6 +92,10 @@ class GnuAbiCheckBase(CheckBase):
 
     @classmethod
     def _get_ubuntu_versions_map(cls):
+        raise NotImplementedError()
+
+    @classmethod
+    def _get_centos_versions_map(cls):
         raise NotImplementedError()
 
     @classmethod
@@ -131,9 +138,24 @@ class GnuAbiCheckBase(CheckBase):
             max_supported_version = versions_map[release]
 
             should_run = required_version <= packaging.version.Version(max_supported_version)
-            
+
             test_result_id = "{}_{}_{}".format(cls._test_result_id_prefix(), "ubuntu", release)
             test_result_msg = "AppImage can run on Ubuntu {}".format(release)
 
             cls.get_logger().debug("Ubuntu {} max supported version: {}".format(release, max_supported_version))
+            yield TestResult(should_run, test_result_id, test_result_msg)
+
+    @classmethod
+    def _check_centos_compat(cls, required_version: packaging.version.Version) -> Iterator[TestResult]:
+        versions_map = cls._get_centos_versions_map()
+
+        for release in get_centos_releases():
+            max_supported_version = versions_map[release]
+
+            should_run = required_version <= packaging.version.Version(max_supported_version)
+
+            test_result_id = "{}_{}_{}".format(cls._test_result_id_prefix(), "ubuntu", release)
+            test_result_msg = "AppImage can run on CentOS {}".format(release)
+
+            cls.get_logger().debug("CentOS {} max supported version: {}".format(release, max_supported_version))
             yield TestResult(should_run, test_result_id, test_result_msg)
