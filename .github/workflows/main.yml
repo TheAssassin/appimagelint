@@ -34,7 +34,7 @@ jobs:
           sudo dpkg --add-architecture i386
           sudo apt-get update
           sudo apt-get install -y desktop-file-utils \
-              libc6:i386 libstdc++6:i386 libffi6:i386 libgmp10:i386 zlib1g:i386 libfuse2:i386
+              libc6:i386 libstdc++6:i386 libffi7:i386 libgmp10:i386 zlib1g:i386 libfuse2:i386
       - name: Build AppImage
         run: |
           export ARCH=i386
