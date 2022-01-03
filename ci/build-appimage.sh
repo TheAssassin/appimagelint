@@ -33,7 +33,7 @@ mkdir -p AppDir
 COMMIT=$(cd "$REPO_ROOT" && git rev-parse --short HEAD)
 echo "$COMMIT" > AppDir/commit
 
-wget https://github.com/TheAssassin/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+wget https://github.com/TheAssassin/linuxdeploy/releases/download/continuous/linuxdeploy-"$ARCH".AppImage
 wget https://raw.githubusercontent.com/linuxdeploy/linuxdeploy-plugin-conda/master/linuxdeploy-plugin-conda.sh
 
 chmod +x linuxdeploy*.AppImage
@@ -47,7 +47,7 @@ export VERSION="$SETUPPY_VERSION-git$COMMIT"
 
 install -D "$REPO_ROOT"/resources/com.github.theassassin.appimagelint.appdata.xml -t AppDir/usr/share/metainfo/
 
-./linuxdeploy-x86_64.AppImage --appdir AppDir --plugin conda \
+./linuxdeploy-"$ARCH".AppImage --appdir AppDir --plugin conda \
     -e $(which readelf) \
     -e $(which desktop-file-validate) \
     -i "$REPO_ROOT"/resources/com.github.theassassin.appimagelint.svg \
@@ -58,10 +58,10 @@ install -D "$REPO_ROOT"/resources/com.github.theassassin.appimagelint.appdata.xm
 AppDir/usr/conda/bin/python3 -m appimagelint.cache bundle_metadata
 
 # now, actually build AppImage
-./linuxdeploy-x86_64.AppImage --appdir AppDir --output appimage
+./linuxdeploy-"$ARCH".AppImage --appdir AppDir --output appimage
 
 # test AppImage with itself
-./appimagelint-x86_64.AppImage appimagelint-x86_64.AppImage --json-report appimagelint-report.json
+./appimagelint-"$ARCH".AppImage appimagelint-"$ARCH".AppImage --json-report appimagelint-report.json
 cat appimagelint-report.json
 
 mv appimagelint*.AppImage "$OLD_CWD"
