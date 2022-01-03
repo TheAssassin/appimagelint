@@ -42,7 +42,7 @@ chmod +x linuxdeploy*.sh
 export CONDA_PACKAGES="Pillow"
 export PIP_REQUIREMENTS="."
 export PIP_WORKDIR="$REPO_ROOT"
-export OUTPUT=appimagelint-x86_64.AppImage
+export OUTPUT=appimagelint-"$ARCH".AppImage
 export VERSION="$SETUPPY_VERSION-git$COMMIT"
 
 install -D "$REPO_ROOT"/resources/com.github.theassassin.appimagelint.appdata.xml -t AppDir/usr/share/metainfo/
@@ -58,8 +58,6 @@ install -D "$REPO_ROOT"/resources/com.github.theassassin.appimagelint.appdata.xm
 AppDir/usr/conda/bin/python3 -m appimagelint.cache bundle_metadata
 
 # now, actually build AppImage
-# guessing the output architecture from $ARCH does not seem to work (any more?), so we specify the output name manually
-export OUTPUT=appimagelint-"$ARCH".AppImage
 ./linuxdeploy-x86_64.AppImage --appdir AppDir --output appimage
 
 # test AppImage with itself
