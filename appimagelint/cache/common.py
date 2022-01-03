@@ -181,16 +181,22 @@ def get_glibcxx_version_from_debian_package(url: str):
 
         logger.debug("Downloading {} to {}".format(url, deb_path))
 
+        def check_call(args, **kwargs):
+            logger.debug(f"Calling {repr(args)}")
+            proc = subprocess.run(args, check=True, capture_output=True, **kwargs)
+            logger.debug(f"stdout: {proc.stdout}")
+            logger.debug(f"stderr: {proc.stderr}")
+
         out_path = os.path.join(d, "out/")
         os.makedirs(out_path, exist_ok=True)
 
-        subprocess.check_call(["wget", "-q", url, "-O", deb_path], stdout=subprocess.DEVNULL)
+        check_call(["wget", "-q", url, "-O", deb_path], cwd=d)
 
         # cannot use dpkg, but extracting Debian packages is quite easy with ar and tar
-        subprocess.check_call(["ar", "x", deb_path], cwd=d, stdout=subprocess.DEVNULL)
+        check_call(["ar", "-xv", deb_path], cwd=d)
 
         data_archive_name = glob.glob(os.path.join(d, "data.tar.*"))[0]
-        subprocess.check_call(["tar", "-xf", data_archive_name], cwd=out_path, stdout=subprocess.DEVNULL)
+        check_call(["tar", "-xvf", data_archive_name], cwd=d)
 
         finder = GnuLibVersionSymbolsFinder(query_deps=True, query_reqs=False)
         return finder.check_all_executables("GLIBCXX_", out_path)
