@@ -33,4 +33,6 @@ class BinaryWalker:
 
             self._last_res = next(self._walk_res)
 
+        # just a fallback, calling next(self._walk_res) throws a StopIteration once done anyway, which will be
+        # propagated to this function's caller
         raise StopIteration
