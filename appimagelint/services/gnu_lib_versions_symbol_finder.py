@@ -69,12 +69,18 @@ class GnuLibVersionSymbolsFinder:
         return versions
 
     def check_all_executables(self, prefix: str, dirpath: str):
+        logger = self._get_logger()
+
         if not os.path.isdir(dirpath):
             raise FileNotFoundError("could not find directory {}".format(repr(dirpath)))
 
         versions = set()
 
         for binary in BinaryWalker(dirpath):
-            versions.update(self.detect_gnu_lib_versions(prefix, binary))
+            binary_versions = self.detect_gnu_lib_versions(prefix, binary)
+            logger.debug(f"versions in {binary} (prefix {prefix}): {binary_versions}")
+            versions.update(binary_versions)
+        else:
+            logger.warning(f"no binaries found in {dirpath}")
 
         return versions
