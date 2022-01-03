@@ -196,7 +196,7 @@ def get_glibcxx_version_from_debian_package(url: str):
         check_call(["ar", "-xv", deb_path], cwd=d)
 
         data_archive_name = glob.glob(os.path.join(d, "data.tar.*"))[0]
-        check_call(["tar", "-xvf", data_archive_name], cwd=d)
+        check_call(["tar", "-xvf", data_archive_name], cwd=out_path)
 
         finder = GnuLibVersionSymbolsFinder(query_deps=True, query_reqs=False)
         return finder.check_all_executables("GLIBCXX_", out_path)
