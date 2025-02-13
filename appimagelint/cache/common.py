@@ -58,13 +58,14 @@ def get_ubuntu_releases():
     return tuple(releases)
 
 
-def get_centos_releases():
+def get_rocky_linux_releases():
     """
-    For now, only the still-supported old-style LTS CentOS 7 is supported.
+    For now, we hardcode the Rocky Linux releases. This might change in the future.
     """
 
+    # TODO: fetch this from some server
     # make sure to return only strings, the caching logic expects that
-    releases = ["7"]
+    releases = ["8", "9"]
 
     return tuple(releases)
 
@@ -111,8 +112,8 @@ def get_ubuntu_package_versions_map(package_name: str):
     return versions_map
 
 
-def get_centos_repodata_primary_xml(version: int):
-    base_url = f"https://ftp.fau.de/centos/{version}/os/x86_64/repodata/"
+def get_rocky_linux_repodata_primary_xml(version: int):
+    base_url = f"https://ftp.fau.de/rockylinux/{version}/BaseOS/x86_64/os/repodata/"
 
     def get_request(url):
         response = requests.get(url)
@@ -134,10 +135,10 @@ def get_centos_repodata_primary_xml(version: int):
     return gzip.decompress(get_request(primary_url).content)
 
 
-def get_centos_package_versions_map(package_name: str, pattern: str):
+def get_rocky_linux_package_versions_map(package_name: str, pattern: str):
     logger = _get_logger()
 
-    logger.info(f"Fetching {package_name} package versions from CentOS mirror")
+    logger.info(f"Fetching {package_name} package versions from Rocky Linux mirror")
 
     namespaces = {
         "common": "http://linux.duke.edu/metadata/common",
@@ -146,9 +147,9 @@ def get_centos_package_versions_map(package_name: str, pattern: str):
 
     versions_map = {}
 
-    releases = get_centos_releases()
+    releases = get_rocky_linux_releases()
     for release in releases:
-        primary_xml_root = ET.fromstring(get_centos_repodata_primary_xml(release))
+        primary_xml_root = ET.fromstring(get_rocky_linux_repodata_primary_xml(release))
 
         package_elem: ET.Element
         for package_elem in primary_xml_root.findall("common:package", namespaces):
@@ -248,9 +249,9 @@ def get_ubuntu_glibcxx_versions_map():
     return rv
 
 
-def get_centos_glibc_versions_map():
-    return get_centos_package_versions_map("glibc", r"libc\.so\.6\(GLIBC_(.*)\)")
+def get_rocky_linux_glibc_versions_map():
+    return get_rocky_linux_package_versions_map("glibc", r"libc\.so\.6\(GLIBC_([^)]*)\)")
 
 
-def get_centos_glibcxx_versions_map():
-    return get_centos_package_versions_map("libstdc++", r"libstdc\+\+\.so\.6\(GLIBCXX_(.*)\)")
+def get_rocky_linux_glibcxx_versions_map():
+    return get_rocky_linux_package_versions_map("libstdc++", r"libstdc\+\+\.so\.6\(GLIBCXX_(.*)\)")

@@ -1,6 +1,6 @@
 from . import GnuAbiCheckBase
 from ..cache.package_version_maps import DebianGlibcxxVersionsCache, UbuntuGlibcxxVersionsCache, \
-    CentosGlibcxxVersionsCache
+    RockyLinuxGlibcxxVersionsCache
 from ..models import AppImage
 
 
@@ -29,5 +29,5 @@ class GlibcxxABICheck(GnuAbiCheckBase):
         return UbuntuGlibcxxVersionsCache.get_data()
 
     @classmethod
-    def _get_centos_versions_map(cls):
-        return CentosGlibcxxVersionsCache.get_data()
+    def _get_rocky_linux_versions_map(cls):
+        return RockyLinuxGlibcxxVersionsCache.get_data()
