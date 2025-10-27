@@ -24,7 +24,7 @@ jobs:
           export ARCH="${{ matrix.ARCH }}"
           bash -xe ci/build-appimage.sh
       - name: Archive artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: AppImage ${{ matrix.ARCH }}
           path: appimagelint*.AppImage*
