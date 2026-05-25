@@ -247,17 +247,16 @@ class IconsCheck(CheckBase):
         if is_svg:
             try:
                 resolution = self._get_svg_icon_res(icon_path)
-            except ET.ParseError as e:
-                logger.debug("Failed to parse SVG file: %s".format(e))
-                return None
+            except (ET.ParseError, ValueError) as e:
+                logger.debug("Failed to detect SVG resolution: %s".format(e))
+                resolution = None
 
             if resolution is None:
                 logger.warning("Note: SVG resolution detection is still incomplete")
-                return None
-
-            # they need to be equivalent when rounded to integer only
-            if round(resolution[0]) != round(resolution[1]):
-                self.get_logger().warning("Non-square scalable icon found: %s", icon_path)
+            else:
+                # SVGs are scalable; width/height parsing is only used for this warning.
+                if round(resolution[0]) != round(resolution[1]):
+                    self.get_logger().warning("Non-square scalable icon found: %s", icon_path)
 
             return "scalable"
 
