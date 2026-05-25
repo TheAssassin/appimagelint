@@ -242,6 +242,10 @@ class IconsCheck(CheckBase):
 
         logger.debug("Opening image: %s", icon_path)
 
+        if not op.isfile(icon_path):
+            logger.error("Icon file is missing or not a regular file: %s", icon_path)
+            return None
+
         is_svg = self._is_svg(icon_path)
 
         if is_svg:
