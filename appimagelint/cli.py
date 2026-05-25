@@ -3,6 +3,15 @@ import logging
 import os
 import sys
 
+try:
+    from importlib.metadata import PackageNotFoundError, version as package_version
+except ImportError:
+    try:
+        from importlib_metadata import PackageNotFoundError, version as package_version
+    except ImportError:
+        PackageNotFoundError = None
+        package_version = None
+
 from appimagelint.services.checks_manager import ChecksManager
 from .cache.runtime_cache import AppImageRuntimeCache
 from .reports import JSONReport
@@ -13,11 +22,13 @@ from .checks import IconsCheck, GlibcABICheck, GlibcxxABICheck, DesktopFilesChec
 
 
 def get_version():
-    try:
-        import pkg_resources
-        version = pkg_resources.require("appimagelint")[0].version
-    except ImportError:
+    if package_version is None:
         version = "unknown"
+    else:
+        try:
+            version = package_version("appimagelint")
+        except PackageNotFoundError:
+            version = "unknown"
 
     APPDIR = os.environ.get("APPDIR", None)
 
