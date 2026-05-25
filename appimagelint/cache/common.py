@@ -2,6 +2,7 @@ import glob
 import gzip
 import os
 import re
+import tarfile
 
 from xml.etree import ElementTree as ET
 
@@ -184,7 +185,20 @@ def get_glibcxx_version_from_debian_package(url: str):
 
         def check_call(args, **kwargs):
             logger.debug(f"Calling {repr(args)}")
-            proc = subprocess.run(args, check=True, capture_output=True, **kwargs)
+
+            try:
+                proc = subprocess.run(args, check=True, capture_output=True, **kwargs)
+            except subprocess.CalledProcessError as e:
+                logger.error("Command %r failed with exit code %s", e.cmd, e.returncode)
+
+                if e.stdout:
+                    logger.error("stdout: %s", e.stdout.decode(errors="replace").strip())
+
+                if e.stderr:
+                    logger.error("stderr: %s", e.stderr.decode(errors="replace").strip())
+
+                raise
+
             logger.debug(f"stdout: {proc.stdout}")
             logger.debug(f"stderr: {proc.stderr}")
 
@@ -193,11 +207,13 @@ def get_glibcxx_version_from_debian_package(url: str):
 
         check_call(["wget", "-q", url, "-O", deb_path], cwd=d)
 
-        # cannot use dpkg, but extracting Debian packages is quite easy with ar and tar
+        # cannot use dpkg, but extracting Debian packages is quite easy with ar and tarfile
         check_call(["ar", "-xv", deb_path], cwd=d)
 
         data_archive_name = glob.glob(os.path.join(d, "data.tar.*"))[0]
-        check_call(["tar", "-xvf", data_archive_name], cwd=out_path)
+        logger.debug("Extracting {} to {}".format(data_archive_name, out_path))
+        with tarfile.open(data_archive_name) as data_archive:
+            data_archive.extractall(out_path)
 
         finder = GnuLibVersionSymbolsFinder(query_deps=True, query_reqs=False)
         return finder.check_all_executables("GLIBCXX_", out_path)
