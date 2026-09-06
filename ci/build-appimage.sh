@@ -3,6 +3,20 @@
 set -x
 set -e
 
+case "$ARCH" in
+    x86_64|aarch64)
+        ;;
+    *)
+        echo "ARCH must be x86_64 or aarch64, got: ${ARCH:-<unset>}" >&2
+        exit 1
+        ;;
+esac
+
+if [ "$(uname -m)" != "$ARCH" ]; then
+    echo "ARCH ($ARCH) must match the native build host ($(uname -m))" >&2
+    exit 1
+fi
+
 # use RAM disk if possible
 if [ "$CI" == "" ] && [ -d /dev/shm ]; then
     TEMP_BASE=/dev/shm
