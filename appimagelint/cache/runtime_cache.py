@@ -4,6 +4,7 @@ import time
 
 from appimagelint.cache import _get_cache_logger
 from .io import cache_timeout
+from .network import WGET_RETRY_OPTIONS
 from . import CacheBase
 
 
@@ -29,7 +30,8 @@ class AppImageRuntimeCache(CacheBase):
 
         try:
             subprocess.check_call([
-                "wget", "-q", "https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-x86_64",
+                "wget", *WGET_RETRY_OPTIONS, "-q",
+                "https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-x86_64",
                 "-O", path
             ])
 

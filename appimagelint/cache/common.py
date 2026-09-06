@@ -5,10 +5,10 @@ import re
 
 from xml.etree import ElementTree as ET
 
-import requests
 import subprocess
 
 from . import DebianCodenameMapCache, UbuntuReleaseNamesCache
+from .network import WGET_RETRY_OPTIONS, get
 from ..services import GnuLibVersionSymbolsFinder
 from .._logging import make_logger
 from .._util import make_tempdir, max_version
@@ -23,7 +23,7 @@ def get_debian_package_versions_map(package_name: str):
 
     logger.info("Fetching {} package versions from Debian sources API".format(package_name))
 
-    response = requests.get("https://sources.debian.org/api/src/{}/".format(package_name))
+    response = get("https://sources.debian.org/api/src/{}/".format(package_name))
     response.raise_for_status()
 
     json_data = response.json()
@@ -77,7 +77,7 @@ def get_debian_releases():
 
 def get_packages_gz_from_ftp_mirror(distro, release):
     url = "https://ftp.fau.de/{}/dists/{}/main/binary-amd64/Packages.gz".format(distro, release)
-    response = requests.get(url)
+    response = get(url)
 
     response.raise_for_status()
 
@@ -116,7 +116,7 @@ def get_rocky_linux_repodata_primary_xml(version: int):
     base_url = f"https://ftp.fau.de/rockylinux/{version}/BaseOS/x86_64/os/repodata/"
 
     def get_request(url):
-        response = requests.get(url)
+        response = get(url)
         response.raise_for_status()
         return response
 
@@ -191,7 +191,7 @@ def get_glibcxx_version_from_debian_package(url: str):
         out_path = os.path.join(d, "out/")
         os.makedirs(out_path, exist_ok=True)
 
-        check_call(["wget", "-q", url, "-O", deb_path], cwd=d)
+        check_call(["wget", *WGET_RETRY_OPTIONS, "-q", url, "-O", deb_path], cwd=d)
 
         # cannot use dpkg, but extracting Debian packages is quite easy with ar and tar
         check_call(["ar", "-xv", deb_path], cwd=d)
