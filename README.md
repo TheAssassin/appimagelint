@@ -18,9 +18,11 @@ Now call appimagelint on any AppImage you want to evaluate:
 
 ```sh
 # use via AppImage
-> wget https://github.com/TheAssassin/appimagelint/releases/download/continuous/appimagelint-x86_64.AppImage
-> chmod +x appimagelint-x86_64.AppImage
-> ./appimagelint-x86_64.AppImage some_other.AppImage
+# choose x86_64 or aarch64 to match your Linux system
+> ARCH=x86_64
+> wget https://github.com/TheAssassin/appimagelint/releases/download/continuous/appimagelint-${ARCH}.AppImage
+> chmod +x appimagelint-${ARCH}.AppImage
+> ./appimagelint-${ARCH}.AppImage some_other.AppImage
 [...]
 
 # use via pip

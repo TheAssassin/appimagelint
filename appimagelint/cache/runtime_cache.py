@@ -1,4 +1,5 @@
 import os
+import platform
 import subprocess
 import time
 
@@ -8,9 +9,44 @@ from . import CacheBase
 
 
 class AppImageRuntimeCache(CacheBase):
+    _RUNTIME_ARCHITECTURES = {
+        "aarch64": "aarch64",
+        "amd64": "x86_64",
+        "arm64": "aarch64",
+        "x86_64": "x86_64",
+    }
+
+    @classmethod
+    def _runtime_architecture(cls) -> str:
+        machine = platform.machine().lower()
+
+        try:
+            return cls._RUNTIME_ARCHITECTURES[machine]
+        except KeyError:
+            raise RuntimeError(
+                "unsupported host architecture {!r}; supported architectures are aarch64 and x86_64".format(machine)
+            )
+
     @classmethod
     def _cache_file_name(cls) -> str:
-        return "runtime"
+        return "runtime-{}".format(cls._runtime_architecture())
+
+    @classmethod
+    def _find_cache_files(cls):
+        yield from super()._find_cache_files()
+
+        # AppImage runtimes used to be stored as simply "runtime". Continue to
+        # accept that cache on x86_64, where it was the only runtime available.
+        if cls._runtime_architecture() != "x86_64":
+            return
+
+        for directory, is_fallback in (
+            (cls._user_cache_base_path(), False),
+            (cls._bundled_cache_base_path(), True),
+        ):
+            legacy_path = os.path.join(directory, "runtime")
+            if os.path.exists(legacy_path):
+                yield legacy_path, is_fallback
 
     @classmethod
     def _cached_runtime_path(cls, save_to_bundled_cache: bool = False):
@@ -24,12 +60,15 @@ class AppImageRuntimeCache(CacheBase):
     @classmethod
     def update_now(cls, save_to_bundled_cache: bool = False):
         path = cls._cached_runtime_path(save_to_bundled_cache=save_to_bundled_cache)
+        architecture = cls._runtime_architecture()
 
         os.makedirs(os.path.dirname(path), exist_ok=True)
 
         try:
             subprocess.check_call([
-                "wget", "-q", "https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-x86_64",
+                "wget", "-q", "https://github.com/AppImage/type2-runtime/releases/download/continuous/runtime-{}".format(
+                    architecture
+                ),
                 "-O", path
             ])
 
