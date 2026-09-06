@@ -1,6 +1,5 @@
-import requests
-
 from appimagelint.cache import JSONFileCacheBase
+from .network import get
 
 
 class UbuntuReleaseNamesCache(JSONFileCacheBase):
@@ -10,7 +9,7 @@ class UbuntuReleaseNamesCache(JSONFileCacheBase):
 
     @classmethod
     def _fetch_data(cls):
-        response = requests.get("https://api.launchpad.net/devel/ubuntu/series")
+        response = get("https://api.launchpad.net/devel/ubuntu/series")
         response.raise_for_status()
 
         data = response.json()

@@ -1,8 +1,7 @@
 import os
 
-import requests
-
 from . import JSONFileCacheBase
+from .network import get
 
 
 class DebianCodenameMapCache(JSONFileCacheBase):
@@ -20,7 +19,7 @@ class DebianCodenameMapCache(JSONFileCacheBase):
         for suite in get_debian_releases():
             headers = {"Range": "bytes=0-512"}
             url = "https://ftp.fau.de/debian/dists/{}/Release".format(suite)
-            response = requests.get(url, headers=headers)
+            response = get(url, headers=headers)
             response.raise_for_status()
 
             for line in response.text.splitlines():
